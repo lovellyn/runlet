@@ -1,0 +1,63 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "runlet"
+version = "0.3.0"
+description = "Linux workspaces, parallel shell jobs, terminals, and file tools for trusted MCP agents."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Software Development",
+]
+dependencies = [
+  "mcp>=2.3,<3",
+  "starlette>=1.10,<2",
+  "uvicorn>=0.34,<1",
+  "Pillow>=12,<13",
+]
+
+[project.optional-dependencies]
+dev = [
+  "build>=1.2,<2",
+  "httpx2>=2.10,<3",
+  "pytest>=8,<10",
+  "pytest-asyncio>=0.25,<2",
+  "ruff>=0.11,<1",
+]
+
+[project.scripts]
+runlet = "runlet.server:main"
+runlet-askpass = "runlet.git_auth:askpass"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/runlet"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src", "/tests", "/examples", "/scripts", "/docs", "/deploy", "/.github",
+  "/Dockerfile", "/compose.yaml", "/.env.example", "/.dockerignore", "/.gitignore",
+  "/pyproject.toml", "/requirements.txt", "/*.md", "/LICENSE",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
+# These timeouts describe remote shell jobs, rather than timing out the MCP handler.
+ignore = ["ASYNC109"]

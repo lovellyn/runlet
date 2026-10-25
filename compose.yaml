@@ -1,0 +1,18 @@
+services:
+  runlet:
+    build: .
+    image: runlet:local
+    env_file: .env
+    environment:
+      SANDBOX_TOKEN: ${SANDBOX_TOKEN:?Set SANDBOX_TOKEN in .env}
+      SANDBOX_ROOT: /data
+      PORT: "8000"
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - runlet-data:/data
+    restart: unless-stopped
+    stop_grace_period: 15s
+
+volumes:
+  runlet-data:
