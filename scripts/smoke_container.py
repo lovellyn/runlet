@@ -31,7 +31,8 @@ def wait_ready(url: str) -> None:
             with urllib.request.urlopen(f"{url}/healthz", timeout=2) as response:
                 if json.load(response) == {"status": "ok"}:
                     return
-        except (urllib.error.URLError, TimeoutError):
+        except (urllib.error.URLError, TimeoutError, ConnectionError):
+            # Docker's port mapping may reset/close HTTP connections during startup.
             pass
         time.sleep(0.25)
     raise RuntimeError("Container did not become ready within 45 seconds")

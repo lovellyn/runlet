@@ -38,6 +38,11 @@ requirements.txt pins production dependencies for Docker and CI. pyproject.toml
 declares the supported direct dependency ranges. There is no required additional
 package manager.
 
+Dependabot checks monthly and groups version updates into one pull request per
+ecosystem: GitHub Actions, Python, and Docker. Each ecosystem allows at most one
+open version-update pull request. Security updates use GitHub's separate handling.
+All pull requests still run the normal CI checks.
+
 To refresh the production pins, use a disposable environment:
 
 ~~~bash

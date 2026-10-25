@@ -7,6 +7,8 @@
 - Make Docker and source deployment independent of any hosting provider.
 - Use port 8000 by default and /data for container workspace persistence.
 - Configure public hosts and origins explicitly.
+- Group monthly Dependabot version updates per ecosystem and limit each to one open PR.
+- Retry connection resets and premature HTTP disconnects during container startup checks.
 - Add bounded file snapshots with expiring download capabilities, streaming,
   HEAD/range support, checksums, and automatic cache cleanup.
 - Add Python/package CI, Docker smoke validation, and stable-release GHCR publishing.
