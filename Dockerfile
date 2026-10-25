@@ -2,7 +2,7 @@
 ARG NODE_VERSION=24.22.1
 FROM node:${NODE_VERSION}-bookworm-slim AS node_runtime
 
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
 LABEL org.opencontainers.image.title="Runlet" \
       org.opencontainers.image.description="Linux workspaces and development tools for trusted MCP agents" \
