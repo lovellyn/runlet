@@ -9,6 +9,7 @@
 - Configure public hosts and origins explicitly.
 - Group monthly Dependabot version updates per ecosystem and limit each to one open PR.
 - Retry connection resets and premature HTTP disconnects during container startup checks.
+- Resolve Docker's current published port again after restarting the smoke-test container.
 - Add bounded file snapshots with expiring download capabilities, streaming,
   HEAD/range support, checksums, and automatic cache cleanup.
 - Add Python/package CI, Docker smoke validation, and stable-release GHCR publishing.

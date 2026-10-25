@@ -179,6 +179,9 @@ def main() -> None:
         wait_ready(url)
         first_boot, workspace_id = asyncio.run(exercise(url, token, identity=(uid, gid)))
         docker("restart", "--time", "10", name)
+        # Docker may assign a different ephemeral host port after a restart.
+        endpoint = docker("port", name, "8000/tcp").splitlines()[0]
+        url = f"http://{endpoint}"
         wait_ready(url)
         second_boot, same_id = asyncio.run(exercise(url, token, workspace_id, identity=(uid, gid)))
         assert second_boot != first_boot and same_id == workspace_id
