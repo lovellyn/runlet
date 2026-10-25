@@ -42,7 +42,7 @@ mcp-types==2.3.0
     # via mcp
 opentelemetry-api==1.45.1
     # via mcp
-pillow==12.3.0
+pillow==13.0.0
     # via runlet
 pycparser==3.12 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
     # via cffi
