@@ -3,6 +3,8 @@
 A Linux MCP server that gives trusted development agents workspaces, parallel
 shell jobs, interactive terminals, file editing, and image previews.
 
+Source repository: [lovellyn/runlet](https://github.com/lovellyn/runlet).
+
 Run it with Docker on your own machine, a server, or a container hosting service.
 Workspaces have separate Python environments, home directories, and temporary
 directories. Agents own their Git commits, pushes, and branch changes.
@@ -46,15 +48,14 @@ The MCP endpoint is [http://localhost:8000/mcp](http://localhost:8000/mcp).
 Compose binds to loopback and keeps workspace files in a named Docker volume.
 `docker compose down` keeps that volume; `docker compose down --volumes` deletes it.
 
-To use a published image, replace `your-org/runlet` with your repository's
-lowercase owner/name:
+After version 0.3.0 is published to GHCR, run the image with:
 
 ~~~bash
 docker run -d --name runlet \
   --env-file .env \
   --publish 127.0.0.1:8000:8000 \
   --mount type=volume,src=runlet-data,dst=/data \
-  ghcr.io/your-org/runlet:0.3.0
+  ghcr.io/lovellyn/runlet:0.3.0
 ~~~
 
 The included GitHub release workflow publishes tested images for stable releases.
@@ -67,6 +68,8 @@ On Ubuntu, the OS packages are python3, python3-venv, and git.
 Docker supplies the additional development tools listed above.
 
 ~~~bash
+git clone https://github.com/lovellyn/runlet.git
+cd runlet
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt

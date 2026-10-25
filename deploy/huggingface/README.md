@@ -11,10 +11,10 @@ app_port: 8000
 
 This is an optional deployment template for the general-purpose container.
 
-1. Publish the GitHub repository's container image and make its GHCR package
-   public. Confirm that it can be pulled without credentials.
-2. Replace your-org/runlet in the adjacent Dockerfile with the actual
-   lowercase GitHub owner/repository. Prefer a version or immutable digest.
+1. Publish a release from [lovellyn/runlet](https://github.com/lovellyn/runlet)
+   and make its GHCR package public. Confirm that it can be pulled without credentials.
+2. The adjacent Dockerfile defaults to ghcr.io/lovellyn/runlet:0.3.0.
+   Select a published version or immutable digest before deploying.
 3. Create a Docker Space and copy this README.md and Dockerfile into its root.
 4. Add SANDBOX_TOKEN as a Space secret.
 5. Set ALLOWED_HOSTS to the Space's actual hostname, for example

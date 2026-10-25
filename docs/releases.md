@@ -5,15 +5,16 @@ containers only for a published, non-prerelease GitHub release.
 
 ## First repository setup
 
-1. Upload the repository to GitHub, using main as the default branch.
+1. Upload the source to [lovellyn/runlet](https://github.com/lovellyn/runlet),
+   using main as the default branch.
 2. Enable GitHub Actions and permit its GITHUB_TOKEN to write packages.
    The publish job requests packages: write; no registry password is needed.
 3. Enable private vulnerability reporting in the repository's Security settings.
 4. Review LICENSE and the 0.3.0 release notes before publishing.
 5. Let the CI workflow complete, including its Docker smoke test.
 
-The image name is automatically derived from the lowercase GitHub owner/repo:
-ghcr.io/OWNER/REPO. No owner is hardcoded in the workflow.
+For lovellyn/runlet, the image is ghcr.io/lovellyn/runlet. The workflow derives
+this name from GITHUB_REPOSITORY, so forks use their own owner/repository.
 
 ## Publish a version
 

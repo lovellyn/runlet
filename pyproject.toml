@@ -26,6 +26,11 @@ dependencies = [
   "Pillow>=12,<13",
 ]
 
+[project.urls]
+Repository = "https://github.com/lovellyn/runlet"
+Issues = "https://github.com/lovellyn/runlet/issues"
+Documentation = "https://github.com/lovellyn/runlet#readme"
+
 [project.optional-dependencies]
 dev = [
   "build>=1.2,<2",

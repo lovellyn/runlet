@@ -6,6 +6,7 @@ FROM ubuntu:24.04
 
 LABEL org.opencontainers.image.title="Runlet" \
       org.opencontainers.image.description="Linux workspaces and development tools for trusted MCP agents" \
+      org.opencontainers.image.source="https://github.com/lovellyn/runlet" \
       org.opencontainers.image.licenses="Apache-2.0"
 
 RUN apt-get update \
