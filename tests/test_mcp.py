@@ -1,5 +1,6 @@
 import base64
 import io
+from dataclasses import replace
 
 import httpx2 as httpx
 import pytest
@@ -9,6 +10,7 @@ from mcp.types.version import LATEST_MODERN_VERSION
 from PIL import Image
 
 from runlet.config import Settings
+from runlet.errors import SandboxError
 from runlet.server import create_app
 
 
@@ -154,5 +156,91 @@ async def test_new_server_boot_does_not_claim_old_jobs_survived(settings):
     second = create_app(settings)
     assert second.state.services.boot_id != services.boot_id
     assert second.state.services.workspaces.get(workspace_id).work.exists()
-    with pytest.raises(ValueError, match="job_not_found"):
+    with pytest.raises(SandboxError, match="job_not_found"):
         await second.state.services.jobs.status(old["job_id"])
+
+
+async def test_domain_error_codes_survive_mcp_transport(settings):
+    app = create_app(replace(settings, max_jobs=1))
+    async with app.router.lifespan_context(app):
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app),
+            headers={"X-Sandbox-Token": settings.token},
+            base_url="http://localhost",
+        ) as http:
+            async with connect(http) as client:
+
+                async def expect_error(name, code, **arguments):
+                    result = await client.call_tool(name, arguments)
+                    assert result.is_error
+                    text = "\n".join(block.text for block in result.content if block.type == "text")
+                    assert code in text, text
+
+                await expect_error("workspace_create", "invalid_workspace_id", workspace_id="")
+                await expect_error(
+                    "workspace_get", "workspace_not_found", workspace_id="does-not-exist"
+                )
+                created = await client.call_tool("workspace_create", {})
+                workspace_id = created.structured_content["workspace_id"]
+                await client.call_tool(
+                    "file_write",
+                    {"workspace_id": workspace_id, "path": "ambiguous.txt", "content": "old old"},
+                )
+                await expect_error(
+                    "file_edit",
+                    "edit_ambiguous",
+                    workspace_id=workspace_id,
+                    path="ambiguous.txt",
+                    old_text="old",
+                    new_text="new",
+                )
+                started = await client.call_tool(
+                    "exec", {"workspace_id": workspace_id, "command": "cat", "wait_seconds": 0}
+                )
+                job_id = started.structured_content["job_id"]
+                try:
+                    sent = await client.call_tool(
+                        "job_write_stdin",
+                        {"job_id": job_id, "chars": "first\n", "expected_input_offset": 0},
+                    )
+                    assert not sent.is_error
+                    await expect_error(
+                        "job_write_stdin",
+                        "stdin_conflict",
+                        job_id=job_id,
+                        chars="replay",
+                        expected_input_offset=0,
+                    )
+                    await expect_error(
+                        "exec",
+                        "server_busy",
+                        workspace_id=workspace_id,
+                        command="printf must-not-run",
+                        wait_seconds=0,
+                    )
+                finally:
+                    await client.call_tool("job_cancel", {"job_id": job_id})
+
+
+async def test_unexpected_tool_exceptions_remain_masked(settings, monkeypatch):
+    app = create_app(settings)
+
+    async def crash(*args, **kwargs):
+        raise RuntimeError("private-internal-diagnostic")
+
+    monkeypatch.setattr(app.state.services.files, "read", crash)
+    async with app.router.lifespan_context(app):
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app),
+            headers={"X-Sandbox-Token": settings.token},
+            base_url="http://localhost",
+        ) as http:
+            async with connect(http) as client:
+                result = await client.call_tool(
+                    "file_read", {"workspace_id": "unused", "path": "unused.txt"}
+                )
+                assert result.is_error
+                text = "\n".join(block.text for block in result.content if block.type == "text")
+                assert "private-internal-diagnostic" not in text
+                assert "RuntimeError" not in text
+                assert not (await client.call_tool("server_info", {})).is_error

@@ -66,6 +66,12 @@ async def exercise(
             names = {tool.name for tool in (await client.list_tools()).tools}
             assert len(names) == 15, names
             assert {"job_resize", "image_read", "job_write_stdin", "file_export"} <= names
+            invalid = await client.call_tool("workspace_create", {"workspace_id": ""})
+            assert invalid.is_error
+            assert any(
+                block.type == "text" and "invalid_workspace_id" in block.text
+                for block in invalid.content
+            )
             if workspace_id is None:
                 workspace_id = (await call("workspace_create"))["workspace_id"]
                 await call(

@@ -54,8 +54,6 @@ def preview(path: Path, relative: str, max_dimension: int) -> ImagePreview:
             "image_too_large", "Image dimensions exceed the decoding limit"
         ) from error
     except (UnidentifiedImageError, OSError, SyntaxError, ValueError) as error:
-        if isinstance(error, SandboxError):
-            raise
         raise SandboxError("invalid_image", "Image cannot be decoded") from error
 
     image.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.3 — 2026-10-26
+
+- Expose expected Runlet error codes and explanations through MCP using the SDK's
+  ToolError type, while keeping unexpected internal exceptions masked.
+- Add MCP transport regression tests and container checks for error reporting.
+
 ## 0.3.2 — 2026-10-26
 
 - Include GitHub CLI from its official signed APT repository, retain its license,

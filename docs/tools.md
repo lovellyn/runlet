@@ -18,6 +18,11 @@
 | file_edit | Replace exact text in an existing file without resending the whole file |
 | file_export | Snapshot one file and return metadata plus an expiring HTTP download URL |
 
+Expected failures return an MCP tool result with isError=true. Its text includes
+the Runlet error code and explanation, such as server_busy, invalid_path,
+edit_ambiguous, or stdin_conflict. Unexpected internal exceptions return a generic
+tool error without internal diagnostics.
+
 ### Export a finished file
 
 ~~~json
