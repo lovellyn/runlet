@@ -90,6 +90,42 @@ async def test_scratch_reuse_reload_delete_and_validation(sandbox, settings):
     assert not reloaded.get(workspace_id).directory.exists()
 
 
+async def test_empty_workspace_id_is_not_replaced_with_a_generated_id(sandbox, local_repo):
+    workspaces, _, _ = sandbox
+    bare, _ = local_repo
+    with pytest.raises(SandboxError, match="invalid_workspace_id"):
+        await workspaces.create(str(bare), workspace_id="")
+    assert not workspaces.items
+    assert list(workspaces.root.iterdir()) == []
+
+
+@pytest.mark.parametrize("ref", ["README.md", "."])
+async def test_clone_rejects_file_paths_as_refs_without_retaining_a_workspace(
+    sandbox, local_repo, ref
+):
+    workspaces, _, _ = sandbox
+    bare, _ = local_repo
+    with pytest.raises(SandboxError, match="setup_failed"):
+        await workspaces.create(str(bare), ref, "invalid-ref")
+    assert not workspaces.items
+    assert list(workspaces.root.iterdir()) == []
+
+
+@pytest.mark.parametrize("kind", ["tag", "commit"])
+async def test_clone_selects_the_requested_tag_or_commit(sandbox, local_repo, kind):
+    workspaces, _, files = sandbox
+    bare, seed = local_repo
+    original = git(seed, "rev-parse", "HEAD")
+    git(seed, "tag", "initial")
+    (seed / "README.md").write_text("newer revision\n")
+    git(seed, "commit", "-am", "Newer revision")
+    git(seed, "push", "origin", "main", "--tags")
+    result = await workspaces.create(str(bare), "initial" if kind == "tag" else original)
+    assert result["head_commit"] == original
+    assert result["branch"] is None
+    assert (await files.read(result["workspace_id"], "README.md"))["content"] == "original\n"
+
+
 @pytest.mark.parametrize(
     "url",
     [

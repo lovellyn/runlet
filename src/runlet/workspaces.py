@@ -248,7 +248,7 @@ class Workspaces:
         workspace_id: str | None = None,
     ) -> dict:
         explicit_id = workspace_id is not None
-        workspace_id = validate_id(workspace_id or f"ws-{uuid.uuid4().hex[:16]}")
+        workspace_id = validate_id(workspace_id if explicit_id else f"ws-{uuid.uuid4().hex[:16]}")
         normalized = normalize_repo_url(repo_url) if repo_url is not None else None
         if ref is not None and (
             not ref or ref.startswith("-") or len(ref) > 255 or any(ord(char) < 32 for char in ref)
@@ -343,6 +343,7 @@ class Workspaces:
                             "checkout",
                             "--quiet",
                             ref,
+                            "--",  # A ref must not fall back to a file-path checkout.
                         ],
                         self.settings.setup_timeout,
                         env,

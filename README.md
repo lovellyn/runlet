@@ -48,7 +48,7 @@ The MCP endpoint is [http://localhost:8000/mcp](http://localhost:8000/mcp).
 Compose binds to loopback and keeps workspace files in a named Docker volume.
 `docker compose down` keeps that volume; `docker compose down --volumes` deletes it.
 
-After version 0.3.0 is published to GHCR, run the image with:
+Run the published 0.3.0 image with:
 
 ~~~bash
 docker run -d --name runlet \
@@ -57,9 +57,6 @@ docker run -d --name runlet \
   --mount type=volume,src=runlet-data,dst=/data \
   ghcr.io/lovellyn/runlet:0.3.0
 ~~~
-
-The included GitHub release workflow publishes tested images for stable releases.
-See [release setup](docs/releases.md) when configuring a new repository.
 
 ## Run from source
 

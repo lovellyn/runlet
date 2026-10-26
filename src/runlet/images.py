@@ -15,6 +15,7 @@ MAX_IMAGE_OUTPUT_BYTES = 2 * 1024 * 1024
 MAX_IMAGE_DIMENSION = 4096
 DEFAULT_IMAGE_DIMENSION = 1600
 MAX_CONCURRENT_IMAGES = 2
+SUPPORTED_IMAGE_FORMATS = ("PNG", "JPEG", "WEBP", "GIF")
 
 
 @dataclass(frozen=True)
@@ -34,8 +35,8 @@ def preview(path: Path, relative: str, max_dimension: int) -> ImagePreview:
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
-            with Image.open(io.BytesIO(data)) as source:
-                if source.format not in {"PNG", "JPEG", "WEBP", "GIF"}:
+            with Image.open(io.BytesIO(data), formats=SUPPORTED_IMAGE_FORMATS) as source:
+                if source.format not in SUPPORTED_IMAGE_FORMATS:
                     raise SandboxError("unsupported_image", "Use PNG, JPEG, WebP or GIF")
                 width, height = source.size
                 if width * height > MAX_IMAGE_PIXELS:

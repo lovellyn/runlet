@@ -40,7 +40,7 @@ ALLOWED_ORIGINS=https://sandbox.example.com
 ~~~
 
 SANDBOX_TOKEN must be nonempty and have no leading or trailing whitespace.
-Limits must be positive; the default timeout must not exceed the maximum, and
+Limits must be finite and positive; the default timeout must not exceed the maximum, and
 RESPONSE_BYTES must not exceed MAX_OUTPUT_BYTES.
 
 Image preview limits are fixed: 10 MiB input, 25 megapixels, 2 MiB output, up to

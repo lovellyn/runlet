@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.1 — 2026-10-26
+
+- Upgrade Pillow to 13.0.0 for upstream security fixes and restrict preview decoder formats.
+- Reject file paths supplied as clone refs instead of silently using the default branch.
+- Reject empty workspace IDs and nonfinite timeout settings before setup begins.
+- Retain Node's upstream license and third-party notices in the container image.
+- Validate stable release tags before dependency installation and container builds.
+- Streamline release and deployment instructions and document download-client identification.
+
 ## 0.3.0
 
 - Name the project Runlet, with the runlet Python package, CLI, and container examples.

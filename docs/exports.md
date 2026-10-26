@@ -22,13 +22,18 @@ expires_at (UTC), and download_url. File bytes stay out of the MCP response.
 Download the URL as a normal HTTP file; X-Sandbox-Token is not required:
 
 ~~~bash
-curl --fail "$download_url" --output result.zip
+curl --fail --user-agent 'Runlet-Client/1.0' "$download_url" --output result.zip
 ~~~
 
 GET streams the snapshot with Content-Disposition: attachment. HEAD returns
 metadata without the body. Byte ranges support resuming downloads. Responses
 use Cache-Control: no-store, Referrer-Policy: no-referrer, and nosniff. The ETag
 is the snapshot's SHA-256 digest.
+
+Use a descriptive application User-Agent when a gateway requires it. For example,
+Cloudflare's workers.dev Browser Integrity Check can reject Python's default
+urllib user agent; an application identifier such as Runlet-Client/1.0 works
+without impersonating a browser. See the [Cloudflare guidance](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1010/).
 
 The agent harness can stream the bytes into its own workspace, verify sha256,
 and register the result with its host's file/download interface. Returning this
