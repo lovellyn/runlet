@@ -9,19 +9,16 @@ app_port: 8000
 
 # Runlet on Hugging Face
 
-This is an optional deployment template for the general-purpose container.
+This deployment example uses Runlet's published container image.
 
-1. Publish a release from [lovellyn/runlet](https://github.com/lovellyn/runlet)
-   and make its GHCR package public. Confirm that it can be pulled without credentials.
-2. The adjacent Dockerfile defaults to ghcr.io/lovellyn/runlet:0.3.0.
-   Select a published version or immutable digest before deploying.
-3. Create a Docker Space and copy this README.md and Dockerfile into its root.
-4. Add SANDBOX_TOKEN as a Space secret.
-5. Set ALLOWED_HOSTS to the Space's actual hostname, for example
-   your-user-your-space.hf.space. No automatic SPACE_HOST detection is used.
-6. For browser clients, set ALLOWED_ORIGINS to the corresponding HTTPS origin.
-7. Optionally configure GITHUB_TOKEN, GIT_USER_NAME, and GIT_USER_EMAIL.
-8. Connect to https://YOUR-SPACE-HOST.hf.space/mcp with X-Sandbox-Token.
+1. Select a published image version or immutable digest in the adjacent Dockerfile.
+2. Create a Docker Space and copy this README.md and Dockerfile into its root.
+3. Add SANDBOX_TOKEN as a Space secret.
+4. Set ALLOWED_HOSTS to the Space's actual hostname, for example
+   your-user-your-space.hf.space.
+5. For browser clients, set ALLOWED_ORIGINS to the corresponding HTTPS origin.
+6. Optionally configure GITHUB_TOKEN, GIT_USER_NAME, and GIT_USER_EMAIL.
+7. Connect to https://YOUR-SPACE-HOST.hf.space/mcp with X-Sandbox-Token.
 
 For a private Space, the client additionally supplies its Hugging Face read
 credential in Authorization: Bearer <HF_TOKEN>. The platform checks that
@@ -71,4 +68,3 @@ Only README.md and Dockerfile need to be copied to the Space.
 References:
 - [Docker Spaces](https://huggingface.co/docs/hub/spaces-sdks-docker)
 - [Private endpoint authentication](https://huggingface.co/docs/hub/spaces-api-endpoints)
-- [GHCR package visibility](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)

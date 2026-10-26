@@ -1,20 +1,7 @@
 # Releases
 
-The included workflow validates pull requests and pushes to main. It publishes
-containers only for a published, non-prerelease GitHub release.
-
-## First repository setup
-
-1. Upload the source to [lovellyn/runlet](https://github.com/lovellyn/runlet),
-   using main as the default branch.
-2. Enable GitHub Actions and permit its GITHUB_TOKEN to write packages.
-   The publish job requests packages: write; no registry password is needed.
-3. Enable private vulnerability reporting in the repository's Security settings.
-4. Review LICENSE and the release's changelog before publishing.
-5. Let the CI workflow complete, including its Docker smoke test.
-
-For lovellyn/runlet, the image is ghcr.io/lovellyn/runlet. The workflow derives
-this name from GITHUB_REPOSITORY, so forks use their own owner/repository.
+The CI workflow validates pull requests and pushes to main. Published stable
+GitHub releases also publish container images to ghcr.io/lovellyn/runlet.
 
 ## Publish a version
 
@@ -38,13 +25,9 @@ Prereleases and manual CI runs do not publish images. Publish stable releases in
 version order so latest and minor tags move forward. Prefer immutable image
 digests for deployments requiring a fixed artifact.
 
-After the first push, make the package public in its GitHub package settings.
-A public repository does not by itself guarantee a public GHCR package. Test an
-anonymous pull before using the image in a public deployment template.
-
-Update the Hugging Face template's image version/digest when selecting a new
-release. The template and README keep using the published 0.3.0 image until a
-replacement is available. There is no automatic deployment to hosting services.
+Verify an anonymous pull of the published image before deployment. Update image
+references in README.md and deploy/huggingface/Dockerfile when adopting a release,
+then rebuild the deployment.
 
 ## Checks
 

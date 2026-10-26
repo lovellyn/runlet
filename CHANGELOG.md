@@ -7,7 +7,7 @@
 - Reject empty workspace IDs and nonfinite timeout settings before setup begins.
 - Retain Node's upstream license and third-party notices in the container image.
 - Validate stable release tags before dependency installation and container builds.
-- Refresh release and download-client documentation after the first published release.
+- Streamline release and deployment instructions and document download-client identification.
 
 ## 0.3.0
 

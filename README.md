@@ -58,9 +58,6 @@ docker run -d --name runlet \
   ghcr.io/lovellyn/runlet:0.3.0
 ~~~
 
-The included GitHub release workflow publishes tested images for stable releases.
-See [release setup](docs/releases.md) when configuring a new repository.
-
 ## Run from source
 
 Requires Linux, Python 3.12+, Bash, Git, and Python venv/ensurepip support.
