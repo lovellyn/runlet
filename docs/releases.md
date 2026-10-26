@@ -22,9 +22,9 @@ Keep pyproject.toml, CHANGELOG.md, and deployment examples consistent. Commit
 the release changes, tag that commit v0.3.1, and publish a GitHub release for
 that tag. Stable tags must be vMAJOR.MINOR.PATCH and match the package version.
 
-The workflow validates the stable tag before publishing. Tests and the amd64
-container smoke test must pass before it builds and pushes linux/amd64 and
-linux/arm64 images, with SBOM/provenance attestations.
+The workflow first checks that the stable tag matches pyproject.toml, then runs
+tests and the amd64 container smoke test. After those pass, it builds and
+pushes linux/amd64 and linux/arm64 images, with SBOM/provenance attestations.
 The ARM64 variant is built during publishing; the included runtime smoke test
 currently exercises amd64.
 
