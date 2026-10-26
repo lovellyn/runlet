@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.1 (unreleased)
+## 0.3.1 — 2026-10-26
 
 - Upgrade Pillow to 13.0.0 for upstream security fixes and restrict preview decoder formats.
 - Reject file paths supplied as clone refs instead of silently using the default branch.
