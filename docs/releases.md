@@ -5,7 +5,7 @@ GitHub releases also publish container images to ghcr.io/lovellyn/runlet.
 
 ## Publish a version
 
-Keep pyproject.toml, CHANGELOG.md, and deployment examples consistent. Commit
+Keep pyproject.toml and CHANGELOG.md consistent. Commit
 the release changes, tag that commit v0.3.1, and publish a GitHub release for
 that tag. Stable tags must be vMAJOR.MINOR.PATCH and match the package version.
 
@@ -22,12 +22,11 @@ For version 0.3.1, the generated tags are:
 - latest
 
 Prereleases and manual CI runs do not publish images. Publish stable releases in
-version order so latest and minor tags move forward. Prefer immutable image
-digests for deployments requiring a fixed artifact.
+version order so latest and minor tags move forward.
 
-Verify an anonymous pull of the published image before deployment. Update image
-references in README.md and deploy/huggingface/Dockerfile when adopting a release,
-then rebuild the deployment.
+Verify an anonymous pull of the published image before deployment. The quickstart
+and Hugging Face wrapper use latest, so no version-update commit is needed.
+Rebuild deployments with a fresh base-image pull to adopt the new release.
 
 ## Checks
 

@@ -9,16 +9,15 @@ app_port: 8000
 
 # Runlet on Hugging Face
 
-This deployment example uses Runlet's published container image.
+This deployment example uses Runlet's latest stable container image.
 
-1. Select a published image version or immutable digest in the adjacent Dockerfile.
-2. Create a Docker Space and copy this README.md and Dockerfile into its root.
-3. Add SANDBOX_TOKEN as a Space secret.
-4. Set ALLOWED_HOSTS to the Space's actual hostname, for example
+1. Create a Docker Space and copy this README.md and Dockerfile into its root.
+2. Add SANDBOX_TOKEN as a Space secret.
+3. Set ALLOWED_HOSTS to the Space's actual hostname, for example
    your-user-your-space.hf.space.
-5. For browser clients, set ALLOWED_ORIGINS to the corresponding HTTPS origin.
-6. Optionally configure GITHUB_TOKEN, GIT_USER_NAME, and GIT_USER_EMAIL.
-7. Connect to https://YOUR-SPACE-HOST.hf.space/mcp with X-Sandbox-Token.
+4. For browser clients, set ALLOWED_ORIGINS to the corresponding HTTPS origin.
+5. Optionally configure GITHUB_TOKEN, GIT_USER_NAME, and GIT_USER_EMAIL.
+6. Connect to https://YOUR-SPACE-HOST.hf.space/mcp with X-Sandbox-Token.
 
 For a private Space, the client additionally supplies its Hugging Face read
 credential in Authorization: Bearer <HF_TOKEN>. The platform checks that
@@ -47,9 +46,8 @@ A Space's ordinary local filesystem is ephemeral. If persistent storage is avail
 configure SANDBOX_ROOT to a writable directory on that storage. Push Git progress
 explicitly or back up files before losing ephemeral storage.
 
-Updating this Dockerfile to a new version/digest and rebuilding selects a new
-container release. Changes to a mutable remote tag do not reliably trigger a
-Space rebuild.
+Rebuild the Space with a fresh base-image pull to adopt a new release from
+latest. Publishing an image does not automatically redeploy a running Space.
 
 ## Validate locally
 
