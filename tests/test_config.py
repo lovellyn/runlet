@@ -3,6 +3,15 @@ import pytest
 from runlet.config import Settings
 
 
+@pytest.mark.parametrize("variable", ["DEFAULT_JOB_TIMEOUT", "MAX_JOB_TIMEOUT", "SETUP_TIMEOUT"])
+@pytest.mark.parametrize("value", ["nan", "inf", "-inf"])
+def test_timeouts_reject_nonfinite_environment_values(monkeypatch, variable, value):
+    monkeypatch.setenv("SANDBOX_TOKEN", "example")
+    monkeypatch.setenv(variable, value)
+    with pytest.raises(ValueError, match="finite and positive"):
+        Settings.from_env()
+
+
 @pytest.mark.parametrize(
     "url",
     [

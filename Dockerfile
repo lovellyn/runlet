@@ -29,6 +29,7 @@ RUN python3 -m venv /opt/runlet && mkdir -p /data
 ENV PATH="/opt/runlet/bin:${PATH}"
 
 COPY --from=node_runtime /usr/local/bin/node /usr/local/bin/node
+COPY --from=node_runtime /usr/local/LICENSE /usr/local/share/doc/node/LICENSE
 COPY --from=node_runtime /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm
 RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
     && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
@@ -38,7 +39,7 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY pyproject.toml README.md LICENSE ./
+COPY pyproject.toml README.md LICENSE THIRD_PARTY_NOTICES.md ./
 COPY src ./src
 RUN pip install --no-cache-dir --no-deps .
 

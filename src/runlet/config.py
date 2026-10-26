@@ -1,5 +1,6 @@
 """Small, environment-driven configuration."""
 
+import math
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -59,8 +60,9 @@ class Settings:
             "max_export_bytes",
             "max_exports",
         ):
-            if getattr(self, key) <= 0:
-                raise ValueError(f"{key} must be positive")
+            value = getattr(self, key)
+            if not math.isfinite(value) or value <= 0:
+                raise ValueError(f"{key} must be finite and positive")
         if self.default_timeout > self.max_timeout:
             raise ValueError("default_timeout must not exceed max_timeout")
         if self.response_bytes > self.max_output_bytes:

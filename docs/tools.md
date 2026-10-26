@@ -9,7 +9,7 @@
 | workspace_delete | Explicitly remove an idle workspace, including unpushed files |
 | exec | Start a shell command; return its result or background job ID |
 | job_status | Incremental output, completion status, and optional long polling |
-| job_cancel | Stop a job and its subprocess group |
+| job_cancel | Stop a job and its descendants, including detached sessions |
 | job_write_stdin | Send UTF-8 input or pipe EOF to a running job, with optional input-offset checking |
 | job_resize | Resize a running PTY and notify its foreground process |
 | image_read | Return a validated screenshot/image as native MCP image content |
@@ -49,7 +49,8 @@ Tool arguments:
 
 repo_url accepts HTTPS github.com owner/repository URLs without embedded
 credentials. ref can be a branch, tag, or commit SHA. If omitted, a new clone
-uses the remote's default branch. Omit workspace_id to generate an ID.
+uses the remote's default branch. File paths are rejected as refs. Omit
+workspace_id to generate an ID; an explicit empty ID is invalid.
 
 Calling workspace_create with an existing ID returns the current checkout.
 Uncommitted edits and untracked files stay in place. Conflicting supplied

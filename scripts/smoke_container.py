@@ -98,6 +98,9 @@ async def exercise(
                 "node --version; npm --version; git --version; "
                 "ffmpeg -version >/dev/null; ffprobe -version >/dev/null; "
                 "gcc --version >/dev/null; rg --version >/dev/null; jq --version; "
+                "test -s /usr/local/share/doc/node/LICENSE; "
+                "test -s /usr/local/lib/node_modules/npm/LICENSE; "
+                "test -s /app/THIRD_PARTY_NOTICES.md; "
                 "printf toolchain-ok"
             )
             result = await call("exec", workspace_id=workspace_id, command=command)

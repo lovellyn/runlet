@@ -31,7 +31,6 @@ additional OS packages baked into its image. Every workspace receives a
 separate Python virtual environment, home directory, and temporary directory.
 Project package installation is an explicit agent command.
 
-
 ### Python projects
 
 Install project dependencies into the workspace's active virtual environment
@@ -60,7 +59,7 @@ Frontend frameworks and project dependencies are installed by the agent.
 Building and testing projects works through the existing MCP tools. A dev server
 can run alongside file edits and browser-test commands in the same workspace.
 Keep the server job alive while testing, then cancel it when finished. External
-preview routing is not provided by this scaffold.
+preview routing is not provided by Runlet.
 
 ### Headless browser tests
 

@@ -11,6 +11,9 @@ requirements.txt. This is not an exhaustive package inventory.
 Ubuntu package copyright and license information is normally installed under
 /usr/share/doc/<package>/copyright. Python distributions include metadata and
 license files under /opt/runlet/lib/python3.12/site-packages.
+Node's complete upstream license is retained at /usr/local/share/doc/node/LICENSE,
+and npm's license is at /usr/local/lib/node_modules/npm/LICENSE. This document
+is also included at /app/THIRD_PARTY_NOTICES.md.
 The release workflow requests a BuildKit SBOM and provenance attestation for
 each published container image.
 
