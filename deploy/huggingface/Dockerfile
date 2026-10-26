@@ -1,6 +1,6 @@
 # Use a published Runlet release from the canonical repository's GHCR package.
 # A digest-pinned reference can be used instead of the version tag.
-ARG BASE_IMAGE=ghcr.io/lovellyn/runlet:0.3.0
+ARG BASE_IMAGE=ghcr.io/lovellyn/runlet:0.3.1
 FROM ${BASE_IMAGE}
 
 # Hugging Face requires UID 1000. Keep its numeric identity policy in this wrapper.
