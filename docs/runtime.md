@@ -7,7 +7,7 @@ at build time and remain available after a restart:
 | --- | --- |
 | Python | Python 3.12, pip in virtual environments; Pillow for image previews |
 | JavaScript | Node.js 24.22.1, npm/npx |
-| Source control | Git with HTTPS transport |
+| Source control | Git with HTTPS transport, GitHub CLI (`gh`) |
 | Search and data | ripgrep (`rg`), jq |
 | Downloads and archives | curl, zip/unzip, tar/gzip from Ubuntu |
 | Native builds | GCC/G++, make, pkg-config, Python development headers |
@@ -30,6 +30,17 @@ can install OS packages directly; a deployment using a non-root account needs
 additional OS packages baked into its image. Every workspace receives a
 separate Python virtual environment, home directory, and temporary directory.
 Project package installation is an explicit agent command.
+
+### GitHub operations
+
+GitHub CLI is installed from GitHub's official signed APT repository. It uses
+the configured `GITHUB_TOKEN`, which Runlet makes available to jobs. No
+interactive `gh auth login` is needed. From a cloned GitHub repository:
+
+~~~bash
+gh pr list
+gh run list --limit 5
+~~~
 
 ### Python projects
 

@@ -95,11 +95,12 @@ async def exercise(
                 "set -e; "
                 + identity_check
                 + 'python -c "import sys; assert sys.version_info >= (3, 12)"; '
-                "node --version; npm --version; git --version; "
+                "node --version; npm --version; git --version; gh --version; "
                 "ffmpeg -version >/dev/null; ffprobe -version >/dev/null; "
                 "gcc --version >/dev/null; rg --version >/dev/null; jq --version; "
                 "test -s /usr/local/share/doc/node/LICENSE; "
                 "test -s /usr/local/lib/node_modules/npm/LICENSE; "
+                "test -s /usr/local/share/doc/gh/LICENSE; "
                 "test -s /app/THIRD_PARTY_NOTICES.md; "
                 "printf toolchain-ok"
             )

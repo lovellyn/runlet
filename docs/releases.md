@@ -6,7 +6,7 @@ GitHub releases also publish container images to ghcr.io/lovellyn/runlet.
 ## Publish a version
 
 Keep pyproject.toml and CHANGELOG.md consistent. Commit
-the release changes, tag that commit v0.3.1, and publish a GitHub release for
+the release changes, tag that commit vMAJOR.MINOR.PATCH, and publish a GitHub release for
 that tag. Stable tags must be vMAJOR.MINOR.PATCH and match the package version.
 
 The workflow first checks that the stable tag matches pyproject.toml, then runs
@@ -15,10 +15,10 @@ pushes linux/amd64 and linux/arm64 images, with SBOM/provenance attestations.
 The ARM64 variant is built during publishing; the included runtime smoke test
 currently exercises amd64.
 
-For version 0.3.1, the generated tags are:
+Each stable release publishes these image tags:
 
-- 0.3.1
-- 0.3
+- MAJOR.MINOR.PATCH
+- MAJOR.MINOR
 - latest
 
 Prereleases and manual CI runs do not publish images. Publish stable releases in
@@ -30,8 +30,10 @@ Rebuild deployments with a fresh base-image pull to adopt the new release.
 
 ## Checks
 
+Set RELEASE_TAG to the version tag being published, then run:
+
 ~~~bash
-python scripts/check_release.py v0.3.1
+python scripts/check_release.py "$RELEASE_TAG"
 docker build --tag runlet:test .
 python scripts/smoke_container.py --image runlet:test
 ~~~

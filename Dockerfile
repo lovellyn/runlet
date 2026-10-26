@@ -24,6 +24,25 @@ RUN apt-get update \
         libxcomposite1 libxdamage1 libxext6 libxfixes3 libxkbcommon0 libxrandr2 \
     && rm -rf /var/lib/apt/lists/*
 
+# GitHub CLI from GitHub's signed APT repository.
+RUN install -d -m 0755 /etc/apt/keyrings \
+    && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+        -o /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+    && printf '%s  %s\n' \
+        6084d5d7bd8e288441e0e94fc6275570895da18e6751f70f057485dc2d1a811b \
+        /etc/apt/keyrings/githubcli-archive-keyring.gpg | sha256sum --check - \
+    && chmod 0644 /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+    && printf 'deb [arch=%s signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main\n' \
+        "$(dpkg --print-architecture)" > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gh \
+    && runlet_gh_version="$(dpkg-query --show --showformat='${Version}' gh)" \
+    && install -d -m 0755 /usr/local/share/doc/gh \
+    && curl -fsSL "https://raw.githubusercontent.com/cli/cli/v${runlet_gh_version}/LICENSE" \
+        -o /usr/local/share/doc/gh/LICENSE \
+    && gh --version \
+    && rm -rf /var/lib/apt/lists/*
+
 # Browser executables and project dependencies are installed by agents per workspace.
 RUN python3 -m venv /opt/runlet && mkdir -p /data
 ENV PATH="/opt/runlet/bin:${PATH}"

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "runlet"
-version = "0.3.1"
+version = "0.3.2"
 description = "Linux workspaces, parallel shell jobs, terminals, and file tools for trusted MCP agents."
 readme = "README.md"
 license = "Apache-2.0"

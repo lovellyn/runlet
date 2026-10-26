@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2 — 2026-10-26
+
+- Include GitHub CLI from its official signed APT repository, retain its license,
+  and verify it in container smoke tests. Reuse GITHUB_TOKEN for agent commands.
+- Default deployment examples to latest and remove per-release image-reference edits.
+
 ## 0.3.1 — 2026-10-26
 
 - Upgrade Pillow to 13.0.0 for upstream security fixes and restrict preview decoder formats.
