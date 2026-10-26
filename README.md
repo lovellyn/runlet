@@ -48,14 +48,14 @@ The MCP endpoint is [http://localhost:8000/mcp](http://localhost:8000/mcp).
 Compose binds to loopback and keeps workspace files in a named Docker volume.
 `docker compose down` keeps that volume; `docker compose down --volumes` deletes it.
 
-Run the published 0.3.0 image with:
+Run the published 0.3.1 image with:
 
 ~~~bash
 docker run -d --name runlet \
   --env-file .env \
   --publish 127.0.0.1:8000:8000 \
   --mount type=volume,src=runlet-data,dst=/data \
-  ghcr.io/lovellyn/runlet:0.3.0
+  ghcr.io/lovellyn/runlet:0.3.1
 ~~~
 
 ## Run from source
