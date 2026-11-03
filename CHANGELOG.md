@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.2 — 2026-11-03
+
+- Clarify that the per-workspace cap applies to concurrent jobs: use
+  MAX_CONCURRENT_JOBS_PER_WORKSPACE and report
+  max_concurrent_jobs_per_workspace in server_info.
+- Use workspace_concurrency_limit for a full workspace. Job history remains
+  independently bounded by MAX_JOB_RECORDS.
+
 ## 0.4.1 — 2026-11-03
 
 - Add MAX_JOBS_PER_WORKSPACE (default 4) alongside the existing global job limit.

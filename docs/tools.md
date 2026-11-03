@@ -226,8 +226,8 @@ cannot be deleted while they wait or perform filesystem work.
 Shell commands do not participate in native file locks. The harness must order
 dependent commands and coordinate operations that change the same files, Git
 checkout, or package environment. Use separate workspaces for independent
-agents. `workspace_job_limit` means this workspace has reached
-MAX_JOBS_PER_WORKSPACE; retry after one of its jobs finishes. `server_busy`
+agents. `workspace_concurrency_limit` means this workspace has reached
+MAX_CONCURRENT_JOBS_PER_WORKSPACE; retry after one of its jobs finishes. `server_busy`
 means the global shell-job limit or retained-job capacity is reached. Admission
 checks the workspace limit first, then the global limit, and rejects immediately
 without queueing. Matching request_id retries return the existing job even when

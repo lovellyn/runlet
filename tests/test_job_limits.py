@@ -25,7 +25,7 @@ def limited_jobs(settings):
     @asynccontextmanager
     async def opened(global_limit=3, workspace_limit=2):
         configured = replace(
-            settings, max_jobs=global_limit, max_jobs_per_workspace=workspace_limit
+            settings, max_jobs=global_limit, max_concurrent_jobs_per_workspace=workspace_limit
         )
         workspaces = Workspaces(configured)
         register(workspaces)
@@ -47,7 +47,7 @@ async def test_parallel_admission_enforces_both_limits_without_leaking_slots(lim
         admitted = [result for result in results if isinstance(result, dict)]
         rejected = [result for result in results if isinstance(result, SandboxError)]
         assert len(admitted) == 2 and len(rejected) == 6
-        assert {error.code for error in rejected} == {"workspace_job_limit"}
+        assert {error.code for error in rejected} == {"workspace_concurrency_limit"}
         assert workspaces.get("alpha").active_jobs == jobs._active == 2
 
         # Rejections in alpha do not consume global slots needed by another workspace.
@@ -92,7 +92,7 @@ async def test_matching_request_retry_succeeds_when_both_limits_are_full(limited
         assert jobs._active == 2 and workspaces.get("alpha").active_jobs == 1
         with pytest.raises(SandboxError, match="request_conflict"):
             await jobs.start("alpha", "echo changed", request_id="same-request")
-        with pytest.raises(SandboxError, match="workspace_job_limit"):
+        with pytest.raises(SandboxError, match="workspace_concurrency_limit"):
             await jobs.start("alpha", "true", wait_seconds=0)
         await jobs.cancel(other["job_id"])
         # Identical request IDs in different workspaces remain independent.
@@ -142,7 +142,7 @@ async def test_cancelling_client_wait_does_not_release_a_running_job_slot(limite
         with pytest.raises(asyncio.CancelledError):
             await waiting
         assert workspaces.get("alpha").active_jobs == jobs._active == 1
-        with pytest.raises(SandboxError, match="workspace_job_limit"):
+        with pytest.raises(SandboxError, match="workspace_concurrency_limit"):
             await jobs.start("alpha", "true")
         assert (await jobs.start("beta", "printf other"))["output"] == "other"
         await jobs.cancel(job.job_id)
@@ -150,7 +150,7 @@ async def test_cancelling_client_wait_does_not_release_a_running_job_slot(limite
 
 
 async def test_mcp_reports_both_limits_and_distinct_admission_errors(settings):
-    app = create_app(replace(settings, max_jobs=2, max_jobs_per_workspace=1))
+    app = create_app(replace(settings, max_jobs=2, max_concurrent_jobs_per_workspace=1))
     register(app.state.services.workspaces)
     async with app.router.lifespan_context(app):
         async with httpx.AsyncClient(
@@ -161,7 +161,7 @@ async def test_mcp_reports_both_limits_and_distinct_admission_errors(settings):
             async with connect(http) as client:
                 result = await client.call_tool("server_info", {})
                 assert result.structured_content["max_concurrent_jobs"] == 2
-                assert result.structured_content["max_jobs_per_workspace"] == 1
+                assert result.structured_content["max_concurrent_jobs_per_workspace"] == 1
                 first = await client.call_tool(
                     "exec", {"workspace_id": "alpha", "command": "sleep 30", "wait_seconds": 0}
                 )
@@ -171,7 +171,7 @@ async def test_mcp_reports_both_limits_and_distinct_admission_errors(settings):
                 )
                 assert blocked.is_error
                 assert any(
-                    block.type == "text" and "workspace_job_limit" in block.text
+                    block.type == "text" and "workspace_concurrency_limit" in block.text
                     for block in blocked.content
                 )
                 other = await client.call_tool(

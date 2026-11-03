@@ -178,7 +178,9 @@ async def exercise(
                 assert job["state"] == "completed" and job["exit_code"] == 0, job
                 assert job["output"] == f"job-{number}", job
             # Keep long-lived jobs active while checking both admission boundaries.
-            assert info["max_concurrent_jobs"] == 3 and info["max_jobs_per_workspace"] == 2
+            assert (
+                info["max_concurrent_jobs"] == 3 and info["max_concurrent_jobs_per_workspace"] == 2
+            )
             other_workspace = (await call("workspace_create"))["workspace_id"]
             held = []
             try:
@@ -192,7 +194,7 @@ async def exercise(
                     "exec", {"workspace_id": workspace_id, "command": "true", "wait_seconds": 0}
                 )
                 assert blocked.is_error and any(
-                    block.type == "text" and "workspace_job_limit" in block.text
+                    block.type == "text" and "workspace_concurrency_limit" in block.text
                     for block in blocked.content
                 )
                 held.append(
@@ -242,7 +244,7 @@ def main() -> None:
             "--env",
             "MAX_CONCURRENT_JOBS=3",
             "--env",
-            "MAX_JOBS_PER_WORKSPACE=2",
+            "MAX_CONCURRENT_JOBS_PER_WORKSPACE=2",
             "--publish",
             "127.0.0.1::8000",
             "--mount",

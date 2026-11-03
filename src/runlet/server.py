@@ -171,7 +171,7 @@ def create_app(settings: Settings | None = None):
             "server_version": APP_VERSION,
             "mcp_sdk_version": MCP_VERSION,
             "max_concurrent_jobs": settings.max_jobs,
-            "max_jobs_per_workspace": settings.max_jobs_per_workspace,
+            "max_concurrent_jobs_per_workspace": settings.max_concurrent_jobs_per_workspace,
             "default_timeout": settings.default_timeout,
             "max_timeout": settings.max_timeout,
             "output_buffer_bytes": settings.max_output_bytes,
@@ -275,7 +275,7 @@ def create_app(settings: Settings | None = None):
         this server boot. Check server_info after connection loss; never blindly replay a job
         after restart. Git operations happen only when you explicitly run them.
         New jobs require capacity in both the workspace and global job limits. A full
-        workspace returns workspace_job_limit; a full server returns server_busy.
+        workspace returns workspace_concurrency_limit; a full server returns server_busy.
         Multiple jobs and file tools may run in the same workspace at once. Coordinate commands
         that change the same files, Git checkout, or dependency environment yourself.
         stdin is open for every job. Use job_write_stdin to send input or close a pipe's stdin.
