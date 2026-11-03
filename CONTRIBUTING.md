@@ -27,7 +27,7 @@ python scripts/smoke_container.py --image runlet:test
 ~~~
 
 The container smoke test checks matching server/job identities, authentication,
-MCP tools, file exports/downloads, workspace writes, parallel jobs, the development toolchain,
+MCP tools, streamed uploads, exports/downloads, workspace writes, parallel jobs, the toolchain,
 and persistence after a restart. It creates and removes its own container and volume.
 Optional --expected-uid and --expected-gid flags check deployment-specific IDs.
 The separate deploy/huggingface/smoke.sh check builds and exercises that wrapper.

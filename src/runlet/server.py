@@ -12,7 +12,7 @@ from typing import Any, Literal
 
 import uvicorn
 from mcp.server import MCPServer
-from mcp.server.transport_security import TransportSecuritySettings
+from mcp.server.transport_security import TransportSecurityMiddleware, TransportSecuritySettings
 from mcp.types import ImageContent, TextContent, ToolAnnotations
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -30,6 +30,7 @@ from .images import (
     MAX_IMAGE_PIXELS,
 )
 from .jobs import MAX_STDIN_BYTES, Jobs
+from .uploads import UPLOAD_PATH, Uploads
 from .workspaces import Workspaces
 
 APP_VERSION = version("runlet")
@@ -52,6 +53,9 @@ class SandboxTokenMiddleware:
             return
         if scope["method"] in {"GET", "HEAD"} and DOWNLOAD_PATH.fullmatch(scope["path"]):
             # The route validates a temporary, single-file capability instead of the main key.
+            await self.app(scope, receive, send)
+            return
+        if scope["method"] == "PUT" and UPLOAD_PATH.fullmatch(scope["path"]):
             await self.app(scope, receive, send)
             return
         sandbox_headers = [v for k, v in scope["headers"] if k.lower() == b"x-sandbox-token"]
@@ -77,6 +81,7 @@ class Services:
     jobs: Jobs
     files: Files
     exports: Exports
+    uploads: Uploads
 
 
 def create_app(settings: Settings | None = None):
@@ -86,17 +91,28 @@ def create_app(settings: Settings | None = None):
     jobs = Jobs(settings, workspaces, boot_id)
     files = Files(workspaces)
     exports = Exports(workspaces)
+    uploads = Uploads(workspaces)
+    transport_security = TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=list(settings.allowed_hosts),
+        allowed_origins=list(settings.allowed_origins),
+    )
+    upload_security = TransportSecurityMiddleware(transport_security)
 
     @asynccontextmanager
     async def lifespan(_server: MCPServer):
         await exports.start()
         try:
-            yield
-        finally:
+            await uploads.start()
             try:
-                await jobs.shutdown()
+                yield
             finally:
-                await exports.close()
+                try:
+                    await jobs.shutdown()
+                finally:
+                    await uploads.close()
+        finally:
+            await exports.close()
 
     mcp = MCPServer(
         "Runlet",
@@ -116,6 +132,8 @@ def create_app(settings: Settings | None = None):
             "and image_read to inspect screenshots as native image content. "
             "Use file_export for temporary download links to finished files; links grant access "
             "to one snapshot until expiry or server restart. "
+            "Use file_upload to create a single-file upload ticket, then have the harness "
+            "stream raw bytes to its upload_url with HTTP PUT. File bytes stay outside MCP. "
             "Jobs continue across client disconnects, but not server restarts."
         ),
     )
@@ -138,6 +156,12 @@ def create_app(settings: Settings | None = None):
     async def download(request: Request):
         return exports.response(request.path_params["token"])
 
+    @mcp.custom_route("/uploads/{token}", methods=["PUT"])
+    async def upload(request: Request):
+        if error := await upload_security.validate_request(request):
+            return error
+        return await uploads.receive(request.path_params["token"], request)
+
     @mcp.tool(annotations=ToolAnnotations(read_only_hint=True))
     async def server_info() -> dict[str, Any]:
         """Inspect the server boot ID and limits. A new boot ID means previous jobs are gone."""
@@ -156,6 +180,13 @@ def create_app(settings: Settings | None = None):
                 "ttl_seconds": settings.export_ttl_seconds,
                 "max_file_bytes": settings.max_export_bytes,
                 "max_exports": settings.max_exports,
+            },
+            "uploads": {
+                "enabled": bool(settings.public_base_url),
+                "ttl_seconds": settings.upload_ttl_seconds,
+                "max_file_bytes": settings.max_upload_bytes,
+                "max_uploads": settings.max_uploads,
+                "timeout_seconds": settings.upload_timeout,
             },
             "interactive": {
                 "pty": True,
@@ -217,6 +248,7 @@ def create_app(settings: Settings | None = None):
         """Delete local files, including unpushed work. Reject active jobs or file operations."""
         result = await workspaces.delete(workspace_id)
         jobs.forget_workspace(workspace_id)
+        uploads.forget_workspace(workspace_id)
         return result
 
     @mcp.tool(name="exec", annotations=ToolAnnotations(destructive_hint=True))
@@ -325,6 +357,25 @@ def create_app(settings: Settings | None = None):
         """
         return await exports.create(workspace_id, path)
 
+    @mcp.tool(annotations=ToolAnnotations(destructive_hint=True))
+    async def file_upload(
+        workspace_id: str,
+        path: str,
+        size_bytes: int,
+        sha256: str,
+        overwrite: bool = False,
+    ) -> dict[str, Any]:
+        """Create an expiring single-use ticket for streaming one file into a workspace.
+
+        Requires PUBLIC_BASE_URL. The harness sends raw bytes to upload_url with HTTP PUT;
+        no file bytes belong in this tool call. Bind the exact byte count and SHA-256 first.
+        The URL authorizes only that destination without X-Sandbox-Token. A PUT attempt
+        consumes it; obtain a new ticket after failure. Verified uploads publish atomically
+        through the native file queue. Existing files require overwrite=true. Tickets expire
+        on workspace deletion or server restart. Gateway authentication still applies.
+        """
+        return uploads.create(workspace_id, path, size_bytes, sha256, overwrite)
+
     @mcp.tool(annotations=ToolAnnotations(read_only_hint=True))
     async def file_read(
         workspace_id: str,
@@ -373,19 +424,15 @@ def create_app(settings: Settings | None = None):
         stateless_http=True,
         json_response=True,
         max_request_body_size=4 * 1024 * 1024,
-        transport_security=TransportSecuritySettings(
-            enable_dns_rebinding_protection=True,
-            allowed_hosts=list(settings.allowed_hosts),
-            allowed_origins=list(settings.allowed_origins),
-        ),
+        transport_security=transport_security,
     )
-    app.state.services = Services(settings, boot_id, workspaces, jobs, files, exports)
+    app.state.services = Services(settings, boot_id, workspaces, jobs, files, exports, uploads)
     app.add_middleware(SandboxTokenMiddleware, token=settings.token)
     return app
 
 
 def main() -> None:
-    # Access-log request paths would disclose temporary download capabilities.
+    # Access-log request paths would disclose temporary transfer capabilities.
     uvicorn.run(
         create_app(),
         host="0.0.0.0",

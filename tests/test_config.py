@@ -3,7 +3,9 @@ import pytest
 from runlet.config import Settings
 
 
-@pytest.mark.parametrize("variable", ["DEFAULT_JOB_TIMEOUT", "MAX_JOB_TIMEOUT", "SETUP_TIMEOUT"])
+@pytest.mark.parametrize(
+    "variable", ["DEFAULT_JOB_TIMEOUT", "MAX_JOB_TIMEOUT", "SETUP_TIMEOUT", "UPLOAD_TIMEOUT"]
+)
 @pytest.mark.parametrize("value", ["nan", "inf", "-inf"])
 def test_timeouts_reject_nonfinite_environment_values(monkeypatch, variable, value):
     monkeypatch.setenv("SANDBOX_TOKEN", "example")
@@ -60,3 +62,21 @@ def test_public_hosts_and_origins_require_explicit_configuration(monkeypatch):
     assert set(settings.allowed_hosts) < set(configured.allowed_hosts)
     assert "sandbox.example.com:8443" in configured.allowed_hosts
     assert "https://sandbox.example.com" in configured.allowed_origins
+
+
+def test_upload_settings_from_environment(monkeypatch):
+    monkeypatch.setenv("SANDBOX_TOKEN", "example")
+    for key, value in {
+        "UPLOAD_TTL_SECONDS": "60",
+        "MAX_UPLOAD_BYTES": "1024",
+        "MAX_UPLOADS": "3",
+        "UPLOAD_TIMEOUT": "12.5",
+    }.items():
+        monkeypatch.setenv(key, value)
+    settings = Settings.from_env()
+    assert (
+        settings.upload_ttl_seconds,
+        settings.max_upload_bytes,
+        settings.max_uploads,
+        settings.upload_timeout,
+    ) == (60, 1024, 3, 12.5)

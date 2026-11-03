@@ -26,6 +26,10 @@ class Settings:
     export_ttl_seconds: int = 900
     max_export_bytes: int = 268_435_456
     max_exports: int = 16
+    upload_ttl_seconds: int = 900
+    max_upload_bytes: int = 268_435_456
+    max_uploads: int = 8
+    upload_timeout: float = 300
     allowed_hosts: tuple[str, ...] = (
         "localhost",
         "localhost:*",
@@ -59,6 +63,10 @@ class Settings:
             "export_ttl_seconds",
             "max_export_bytes",
             "max_exports",
+            "upload_ttl_seconds",
+            "max_upload_bytes",
+            "max_uploads",
+            "upload_timeout",
         ):
             value = getattr(self, key)
             if not math.isfinite(value) or value <= 0:
@@ -111,6 +119,10 @@ class Settings:
             export_ttl_seconds=int(os.getenv("EXPORT_TTL_SECONDS", "900")),
             max_export_bytes=int(os.getenv("MAX_EXPORT_BYTES", "268435456")),
             max_exports=int(os.getenv("MAX_EXPORTS", "16")),
+            upload_ttl_seconds=int(os.getenv("UPLOAD_TTL_SECONDS", "900")),
+            max_upload_bytes=int(os.getenv("MAX_UPLOAD_BYTES", "268435456")),
+            max_uploads=int(os.getenv("MAX_UPLOADS", "8")),
+            upload_timeout=float(os.getenv("UPLOAD_TIMEOUT", "300")),
             allowed_hosts=tuple(hosts),
             allowed_origins=tuple(origins),
         )

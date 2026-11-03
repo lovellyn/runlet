@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import hashlib
 import json
 import os
 import secrets
@@ -63,9 +64,17 @@ async def exercise(
                 return result.structured_content
 
             info = await call("server_info")
+            payload = bytes(range(256)) * 20_000
+            checksum = hashlib.sha256(payload).hexdigest()
             names = {tool.name for tool in (await client.list_tools()).tools}
-            assert len(names) == 15, names
-            assert {"job_resize", "image_read", "job_write_stdin", "file_export"} <= names
+            assert len(names) == 16, names
+            assert {
+                "job_resize",
+                "image_read",
+                "job_write_stdin",
+                "file_export",
+                "file_upload",
+            } <= names
             invalid = await client.call_tool("workspace_create", {"workspace_id": ""})
             assert invalid.is_error
             assert any(
@@ -81,7 +90,31 @@ async def exercise(
                 await call("workspace_get", workspace_id=workspace_id)
                 marker = await call("file_read", workspace_id=workspace_id, path="persist.txt")
                 assert marker["content"] == "retained", marker
+                retained = await call("file_export", workspace_id=workspace_id, path="received.bin")
+                assert retained["sha256"] == checksum
 
+            assert info["uploads"]["enabled"]
+            upload = await call(
+                "file_upload",
+                workspace_id=workspace_id,
+                path="received.bin",
+                size_bytes=len(payload),
+                sha256=checksum,
+                overwrite=True,
+            )
+
+            async def chunks():
+                for offset in range(0, len(payload), 65_536):
+                    yield payload[offset : offset + 65_536]
+
+            async with httpx.AsyncClient() as uploader:
+                upload_path = urlsplit(upload["upload_url"]).path
+                response = await uploader.put(f"{url}{upload_path}", content=chunks())
+                assert response.status_code == 201, response.text
+                assert response.json()["sha256"] == checksum
+                assert (await uploader.put(f"{url}{upload_path}", content=b"")).status_code == 404
+            received = await call("file_export", workspace_id=workspace_id, path="received.bin")
+            assert received["size_bytes"] == len(payload) and received["sha256"] == checksum
             assert info["exports"]["enabled"]
             exported = await call("file_export", workspace_id=workspace_id, path="persist.txt")
             download_path = urlsplit(exported["download_url"]).path
@@ -196,7 +229,7 @@ def main() -> None:
         second_boot, same_id = asyncio.run(exercise(url, token, workspace_id, identity=(uid, gid)))
         assert second_boot != first_boot and same_id == workspace_id
         print(
-            "Container smoke passed: auth, MCP, downloads, identity, toolchain, "
+            "Container smoke passed: auth, MCP, streamed uploads, downloads, identity, toolchain, "
             "parallel jobs, persistence"
         )
     except BaseException:

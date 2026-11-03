@@ -20,10 +20,14 @@ The example .env file works with Docker's --env-file, Compose, or Bash source.
 | RESPONSE_BYTES | 65536 | Maximum job output per response, bytes |
 | MAX_FILE_BYTES | 1048576 | Maximum read/write chunk and complete text-edit size |
 | SETUP_TIMEOUT | 180 | Timeout per clone/checkout/venv setup command, seconds |
-| PUBLIC_BASE_URL | Unset (exports disabled) | Reachable HTTP(S) server URL or proxy prefix, without /mcp |
+| PUBLIC_BASE_URL | Unset (HTTP transfers disabled) | Reachable HTTP(S) server URL or proxy prefix, without /mcp |
 | EXPORT_TTL_SECONDS | 900 | Download-link lifetime after the snapshot completes, seconds |
 | MAX_EXPORT_BYTES | 268435456 | Maximum snapshot size, bytes (256 MiB) |
 | MAX_EXPORTS | 16 | Maximum retained exports plus copies in progress |
+| UPLOAD_TTL_SECONDS | 900 | Single-use upload ticket lifetime, seconds |
+| MAX_UPLOAD_BYTES | 268435456 | Maximum raw upload size, bytes (256 MiB) |
+| MAX_UPLOADS | 8 | Maximum pending plus active uploads |
+| UPLOAD_TIMEOUT | 300 | Total admitted upload/publication timeout, seconds |
 | ALLOWED_HOSTS | Loopback hosts | Additional allowed hosts, comma-separated |
 | ALLOWED_ORIGINS | Local HTTP origins | Additional browser origins, comma-separated |
 
@@ -50,7 +54,8 @@ Each stdin write accepts at most 64 KiB of UTF-8.
 
 PUBLIC_BASE_URL must have no credentials, query, fragment, or whitespace. It is
 configured explicitly rather than derived from request headers. See
-[file exports](exports.md) for routing, link access, and cleanup semantics.
+[file exports](exports.md) and [uploads](uploads.md) for routing, capability access,
+and cleanup semantics.
 
 Run one process per data directory. More parallel jobs use MAX_CONCURRENT_JOBS;
 additional Uvicorn workers do not coordinate this server's in-memory state.

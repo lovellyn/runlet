@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0 — 2026-11-03
+
+- Add file_upload tickets and raw HTTP PUT transfers with bounded-memory streaming,
+  exact byte-count and SHA-256 verification, and atomic publication.
+- Scope single-use upload capabilities to one workspace, destination, and overwrite
+  policy; enforce host/origin checks, size/concurrency limits, expiry, and timeouts.
+- Clean partial uploads after disconnects, cancellation, shutdown, and restart;
+  coordinate publication with native file edits and active workspace deletion.
+- Add a reusable streaming harness client, upload documentation, regression tests,
+  and a container smoke check above the MCP request-body limit.
+
 ## 0.3.3 — 2026-10-26
 
 - Expose expected Runlet error codes and explanations through MCP using the SDK's

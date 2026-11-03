@@ -22,6 +22,7 @@ another runtime account.
 - PTYs with stdin, control keys, and explicit terminal resizing.
 - Per-file queued, atomic writes and exact text edits.
 - Native MCP image previews for PNG, JPEG, WebP, and GIF.
+- Streamed, checksum-verified uploads through single-use HTTP tickets.
 - Expiring download links to file snapshots, with streamed and resumable transfers.
 - Python, Node.js/npm, Git, build tools, Chromium runtime libraries, and FFmpeg.
 
@@ -99,6 +100,7 @@ deletes its temporary workspace.
 
 - [MCP tools and concurrency](docs/tools.md)
 - [Configuration](docs/configuration.md)
+- [File uploads and harness integration](docs/uploads.md)
 - [File exports and downloads](docs/exports.md)
 - [Runtime tools and project dependencies](docs/runtime.md)
 - [Workspaces, Git ownership, and recovery](docs/workspaces.md)
@@ -112,7 +114,8 @@ deletes its temporary workspace.
 Mount `SANDBOX_ROOT` to retain workspaces and their dependency environments across
 container replacement. The image uses /data; source launches default to ./var.
 Running jobs and their records end when the server stops.
-Export links and their temporary snapshots also end at server shutdown/restart.
+Transfer tickets and export snapshots also end at server shutdown/restart.
+Completed uploads are ordinary workspace files.
 
 The server does not create checkpoints or push Git state automatically.
 Explicitly push commits or back up the data volume before losing its filesystem.

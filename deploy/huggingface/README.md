@@ -23,10 +23,13 @@ For a private Space, the client additionally supplies its Hugging Face read
 credential in Authorization: Bearer <HF_TOKEN>. The platform checks that
 credential; the sandbox independently checks X-Sandbox-Token.
 
-To enable file_export, set PUBLIC_BASE_URL=https://YOUR-SPACE-HOST.hf.space
+To enable file_export and file_upload, set PUBLIC_BASE_URL=https://YOUR-SPACE-HOST.hf.space
 without /mcp. A private Space still requires its platform authentication for
-downloads; the temporary link cannot bypass that requirement. See the main
-repository's docs/exports.md for limits, link access, and harness integration.
+downloads and uploads; temporary capabilities cannot bypass that requirement.
+Forward PUT /uploads/ as well as GET/HEAD /downloads/ when using a separate proxy.
+See docs/uploads.md and docs/exports.md in the main repository for limits,
+capability access, and harness integration. Gateway request limits may be lower
+than Runlet's configured file-size limit.
 
 The generic example client accepts GATEWAY_TOKEN for this upstream credential:
 

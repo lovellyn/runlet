@@ -17,11 +17,23 @@
 | file_write | Atomically create or replace UTF-8 or base64 files |
 | file_edit | Replace exact text in an existing file without resending the whole file |
 | file_export | Snapshot one file and return metadata plus an expiring HTTP download URL |
+| file_upload | Bind one destination, size, and checksum to a single-use HTTP PUT URL |
 
 Expected failures return an MCP tool result with isError=true. Its text includes
 the Runlet error code and explanation, such as server_busy, invalid_path,
 edit_ambiguous, or stdin_conflict. Unexpected internal exceptions return a generic
 tool error without internal diagnostics.
+
+### Upload an input file
+
+Call file_upload with workspace_id, path, size_bytes, sha256, and optional
+overwrite=true. The harness streams raw bytes with HTTP PUT to the returned
+upload_url; the tool arguments contain metadata only. Successful uploads are
+verified and published atomically. The URL is consumed by one PUT attempt and
+expires on timeout, workspace deletion, or server restart. Existing files require
+explicit overwrite. PUBLIC_BASE_URL enables the route.
+
+See [file uploads](uploads.md) and the reusable examples/upload.py client.
 
 ### Export a finished file
 

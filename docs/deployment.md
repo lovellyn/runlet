@@ -60,6 +60,12 @@ Keep these responses streaming, and redact capability paths from proxy access
 logs. Upstream authentication still applies to downloads; a private gateway must
 permit the intended downloader's request. Export links end at server restart.
 
+For [file uploads](uploads.md), also forward PUT /uploads/ with its raw request
+body. Configure gateway body-size and timeout limits for the intended files and
+disable request buffering when supported. Upload clients provide any upstream
+gateway credential independently of the single-use URL. Redact upload capability
+paths from logs too. Tickets end at server restart; completed workspace files persist.
+
 ## Development servers
 
 An agent can run a frontend dev server while using other jobs and file tools.

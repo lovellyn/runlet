@@ -84,6 +84,7 @@ async def test_real_mcp_clients_reconnect_and_return_native_images(settings):
                     "file_write",
                     "file_edit",
                     "file_export",
+                    "file_upload",
                 }
                 result = await client.call_tool("workspace_create", {})
                 assert not result.is_error, result
