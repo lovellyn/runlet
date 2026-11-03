@@ -96,3 +96,12 @@ def test_workspace_concurrency_limit_must_be_positive(monkeypatch, value):
     monkeypatch.setenv("MAX_CONCURRENT_JOBS_PER_WORKSPACE", value)
     with pytest.raises(ValueError, match="max_concurrent_jobs_per_workspace"):
         Settings.from_env()
+
+
+def test_default_concurrent_job_limits(monkeypatch):
+    monkeypatch.setenv("SANDBOX_TOKEN", "example")
+    monkeypatch.delenv("MAX_CONCURRENT_JOBS", raising=False)
+    monkeypatch.delenv("MAX_CONCURRENT_JOBS_PER_WORKSPACE", raising=False)
+    for configured in (Settings.from_env(), Settings(token="example")):
+        assert configured.max_jobs == 10
+        assert configured.max_concurrent_jobs_per_workspace == 4

@@ -2,6 +2,9 @@
 
 ## 0.4.2 — 2026-11-03
 
+- Default to 10 concurrent jobs globally and 4 per workspace, with matching
+  environment examples and deployment documentation.
+
 - Clarify that the per-workspace cap applies to concurrent jobs: use
   MAX_CONCURRENT_JOBS_PER_WORKSPACE and report
   max_concurrent_jobs_per_workspace in server_info.

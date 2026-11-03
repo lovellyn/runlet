@@ -11,7 +11,7 @@ The example .env file works with Docker's --env-file, Compose, or Bash source.
 | GIT_USER_EMAIL | Unset | Initial Git email for new workspaces |
 | SANDBOX_ROOT | ./var; /data in the image | Runtime data directory |
 | PORT | 8000 | HTTP listener port |
-| MAX_CONCURRENT_JOBS | 2 | Running-job limit across all workspaces |
+| MAX_CONCURRENT_JOBS | 10 | Running-job limit across all workspaces |
 | MAX_CONCURRENT_JOBS_PER_WORKSPACE | 4 | Running-job limit in each individual workspace |
 | MAX_WORKSPACES | 32 | Workspace count limit |
 | MAX_JOB_RECORDS | 256 | Retained job records |

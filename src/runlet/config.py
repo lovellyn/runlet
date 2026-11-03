@@ -13,7 +13,7 @@ class Settings:
     root: Path = Path("var")
     git_user_name: str = ""
     git_user_email: str = ""
-    max_jobs: int = 2
+    max_jobs: int = 10
     max_concurrent_jobs_per_workspace: int = 4
     max_workspaces: int = 32
     max_job_records: int = 256
@@ -108,7 +108,7 @@ class Settings:
             root=Path(os.getenv("SANDBOX_ROOT", "var")).resolve(),
             git_user_name=os.getenv("GIT_USER_NAME", ""),
             git_user_email=os.getenv("GIT_USER_EMAIL", ""),
-            max_jobs=int(os.getenv("MAX_CONCURRENT_JOBS", "2")),
+            max_jobs=int(os.getenv("MAX_CONCURRENT_JOBS", "10")),
             max_concurrent_jobs_per_workspace=int(
                 os.getenv("MAX_CONCURRENT_JOBS_PER_WORKSPACE", "4")
             ),

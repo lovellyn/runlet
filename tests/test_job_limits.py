@@ -5,6 +5,7 @@ from dataclasses import replace
 import httpx2 as httpx
 import pytest
 
+from runlet.config import Settings
 from runlet.errors import SandboxError
 from runlet.jobs import Jobs
 from runlet.server import create_app
@@ -186,3 +187,20 @@ async def test_mcp_reports_both_limits_and_distinct_admission_errors(settings):
                     block.type == "text" and "server_busy" in block.text
                     for block in blocked.content
                 )
+
+
+async def test_defaults_allow_ten_running_jobs_shared_across_workspaces(limited_jobs):
+    defaults = Settings(token="example")
+    async with limited_jobs(
+        global_limit=defaults.max_jobs,
+        workspace_limit=defaults.max_concurrent_jobs_per_workspace,
+    ) as (workspaces, jobs):
+        for workspace_id, count in (("alpha", 4), ("beta", 4), ("gamma", 2)):
+            for _ in range(count):
+                await jobs.start(workspace_id, "sleep 30", wait_seconds=0)
+        assert jobs._active == 10
+        assert [workspaces.get(key).active_jobs for key in ("alpha", "beta", "gamma")] == [4, 4, 2]
+        with pytest.raises(SandboxError, match="workspace_concurrency_limit"):
+            await jobs.start("alpha", "true")
+        with pytest.raises(SandboxError, match="server_busy"):
+            await jobs.start("gamma", "true")

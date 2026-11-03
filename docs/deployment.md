@@ -37,7 +37,7 @@ Persistent storage is not an automatic backup.
 Run exactly one instance against a data directory. Multiple Uvicorn workers or
 replicas do not share job records, reservations, and per-file locks. Configure
 MAX_CONCURRENT_JOBS for the whole server and MAX_CONCURRENT_JOBS_PER_WORKSPACE for each
-workspace. The defaults are 2 globally and 4 per workspace; both limits apply.
+workspace. The defaults are 10 globally and 4 per workspace; both limits apply.
 
 ## Reverse proxies
 

@@ -16,6 +16,7 @@ def settings(tmp_path):
     return Settings(
         token="test-token-which-is-not-a-real-secret",
         root=tmp_path / "sandbox",
+        max_jobs=2,  # Small explicit limit for admission and lifecycle tests.
         setup_timeout=30,
         default_timeout=10,
         max_timeout=30,
