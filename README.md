@@ -17,7 +17,7 @@ another runtime account.
 ## Features
 
 - Scratch workspaces and optional GitHub HTTPS clones.
-- Parallel jobs and file operations within each workspace.
+- Parallel jobs with global and per-workspace limits; concurrent file operations.
 - Background jobs with incremental output, cancellation, timeouts, and reconnects.
 - PTYs with stdin, control keys, and explicit terminal resizing.
 - Per-file queued, atomic writes and exact text edits.

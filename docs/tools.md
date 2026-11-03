@@ -213,7 +213,7 @@ it does not limit the server to one tool call or one shell job.
 | Multiple reads | Run concurrently |
 | Native writes/edits to different files | Run concurrently |
 | Native writes/edits to the same resolved path | Queue in arrival order; each edit checks the current content after acquiring its lock |
-| Multiple shell jobs in one workspace | Run concurrently, subject to the global job limit |
+| Multiple shell jobs in one workspace | Run concurrently, subject to global and per-workspace job limits |
 | File tools alongside shell jobs | Run concurrently, including while a dev server is active |
 | Workspace creation | Different IDs set up concurrently; same-ID requests queue and validate against the completed checkout |
 | Workspace deletion | Rejected with `workspace_busy` while jobs, file operations or metadata inspections are active |
@@ -226,9 +226,12 @@ cannot be deleted while they wait or perform filesystem work.
 Shell commands do not participate in native file locks. The harness must order
 dependent commands and coordinate operations that change the same files, Git
 checkout, or package environment. Use separate workspaces for independent
-agents. `server_busy` means the global shell-job limit or retained-job capacity
-is reached; retry after a job finishes. File operations do not consume shell-job
-slots. `workspace_get` and `workspace_list` report `active_jobs`; `busy` is an
+agents. `workspace_job_limit` means this workspace has reached
+MAX_JOBS_PER_WORKSPACE; retry after one of its jobs finishes. `server_busy`
+means the global shell-job limit or retained-job capacity is reached. Admission
+checks the workspace limit first, then the global limit, and rejects immediately
+without queueing. Matching request_id retries return the existing job even when
+either limit is full. File operations do not consume shell-job slots. `workspace_get` and `workspace_list` report `active_jobs`; `busy` is an
 activity indicator, not a restriction on additional work.
 
 request_id deduplicates an accepted command only while its job record remains

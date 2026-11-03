@@ -127,6 +127,7 @@ def create_app(settings: Settings | None = None):
             "Jobs and file tools can run concurrently within a workspace. Native writes/edits "
             "to the same resolved file queue in order. Coordinate shell commands that touch "
             "the same files, Git checkout or dependency environment yourself. "
+            "Shell jobs share global and per-workspace concurrency limits. "
             "Workspace deletion requires all active operations to finish. "
             "Use exec tty=true for a terminal, job_write_stdin for input, job_resize for size, "
             "and image_read to inspect screenshots as native image content. "
@@ -170,6 +171,7 @@ def create_app(settings: Settings | None = None):
             "server_version": APP_VERSION,
             "mcp_sdk_version": MCP_VERSION,
             "max_concurrent_jobs": settings.max_jobs,
+            "max_jobs_per_workspace": settings.max_jobs_per_workspace,
             "default_timeout": settings.default_timeout,
             "max_timeout": settings.max_timeout,
             "output_buffer_bytes": settings.max_output_bytes,
@@ -272,6 +274,8 @@ def create_app(settings: Settings | None = None):
         when the job ends. Reusing request_id deduplicates only while its record is retained in
         this server boot. Check server_info after connection loss; never blindly replay a job
         after restart. Git operations happen only when you explicitly run them.
+        New jobs require capacity in both the workspace and global job limits. A full
+        workspace returns workspace_job_limit; a full server returns server_busy.
         Multiple jobs and file tools may run in the same workspace at once. Coordinate commands
         that change the same files, Git checkout, or dependency environment yourself.
         stdin is open for every job. Use job_write_stdin to send input or close a pipe's stdin.

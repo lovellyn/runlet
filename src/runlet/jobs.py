@@ -137,6 +137,11 @@ class Jobs:
                     "request_conflict", "request_id was used for a different command"
                 )
         else:
+            if workspace.active_jobs >= self.settings.max_jobs_per_workspace:
+                raise SandboxError(
+                    "workspace_job_limit",
+                    "Workspace job limit reached; retry after a job in this workspace finishes",
+                )
             if self._active >= self.settings.max_jobs:
                 raise SandboxError(
                     "server_busy", "Global job limit reached; retry after a job finishes"

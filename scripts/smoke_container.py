@@ -177,6 +177,42 @@ async def exercise(
                     job = await call("job_status", job_id=job["job_id"], wait_seconds=2)
                 assert job["state"] == "completed" and job["exit_code"] == 0, job
                 assert job["output"] == f"job-{number}", job
+            # Keep long-lived jobs active while checking both admission boundaries.
+            assert info["max_concurrent_jobs"] == 3 and info["max_jobs_per_workspace"] == 2
+            other_workspace = (await call("workspace_create"))["workspace_id"]
+            held = []
+            try:
+                for _ in range(2):
+                    held.append(
+                        await call(
+                            "exec", workspace_id=workspace_id, command="sleep 30", wait_seconds=0
+                        )
+                    )
+                blocked = await client.call_tool(
+                    "exec", {"workspace_id": workspace_id, "command": "true", "wait_seconds": 0}
+                )
+                assert blocked.is_error and any(
+                    block.type == "text" and "workspace_job_limit" in block.text
+                    for block in blocked.content
+                )
+                held.append(
+                    await call(
+                        "exec", workspace_id=other_workspace, command="sleep 30", wait_seconds=0
+                    )
+                )
+                blocked = await client.call_tool(
+                    "exec", {"workspace_id": other_workspace, "command": "true", "wait_seconds": 0}
+                )
+                assert blocked.is_error and any(
+                    block.type == "text" and "server_busy" in block.text
+                    for block in blocked.content
+                )
+            finally:
+                for job in held:
+                    await call("job_cancel", job_id=job["job_id"])
+                await call("workspace_delete", workspace_id=other_workspace)
+            recovered = await call("exec", workspace_id=workspace_id, command="printf recovered")
+            assert recovered["state"] == "completed" and recovered["output"] == "recovered"
             return info["boot_id"], workspace_id
 
 
@@ -203,6 +239,10 @@ def main() -> None:
             "SANDBOX_TOKEN",
             "--env",
             "PUBLIC_BASE_URL=http://localhost:8000",
+            "--env",
+            "MAX_CONCURRENT_JOBS=3",
+            "--env",
+            "MAX_JOBS_PER_WORKSPACE=2",
             "--publish",
             "127.0.0.1::8000",
             "--mount",
@@ -230,7 +270,7 @@ def main() -> None:
         assert second_boot != first_boot and same_id == workspace_id
         print(
             "Container smoke passed: auth, MCP, streamed uploads, downloads, identity, toolchain, "
-            "parallel jobs, persistence"
+            "parallel jobs, workspace/global limits, persistence"
         )
     except BaseException:
         if container_created:

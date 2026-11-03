@@ -80,3 +80,19 @@ def test_upload_settings_from_environment(monkeypatch):
         settings.max_uploads,
         settings.upload_timeout,
     ) == (60, 1024, 3, 12.5)
+
+
+def test_job_limits_from_environment(monkeypatch):
+    monkeypatch.setenv("SANDBOX_TOKEN", "example")
+    monkeypatch.setenv("MAX_CONCURRENT_JOBS", "10")
+    monkeypatch.setenv("MAX_JOBS_PER_WORKSPACE", "4")
+    configured = Settings.from_env()
+    assert configured.max_jobs == 10 and configured.max_jobs_per_workspace == 4
+
+
+@pytest.mark.parametrize("value", ["0", "-1"])
+def test_workspace_job_limit_must_be_positive(monkeypatch, value):
+    monkeypatch.setenv("SANDBOX_TOKEN", "example")
+    monkeypatch.setenv("MAX_JOBS_PER_WORKSPACE", value)
+    with pytest.raises(ValueError, match="max_jobs_per_workspace"):
+        Settings.from_env()

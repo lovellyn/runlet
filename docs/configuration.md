@@ -12,6 +12,7 @@ The example .env file works with Docker's --env-file, Compose, or Bash source.
 | SANDBOX_ROOT | ./var; /data in the image | Runtime data directory |
 | PORT | 8000 | HTTP listener port |
 | MAX_CONCURRENT_JOBS | 2 | Running-job limit across all workspaces |
+| MAX_JOBS_PER_WORKSPACE | 4 | Running-job limit in each individual workspace |
 | MAX_WORKSPACES | 32 | Workspace count limit |
 | MAX_JOB_RECORDS | 256 | Retained job records |
 | DEFAULT_JOB_TIMEOUT | 300 | Default job timeout, seconds |
@@ -57,5 +58,12 @@ configured explicitly rather than derived from request headers. See
 [file exports](exports.md) and [uploads](uploads.md) for routing, capability access,
 and cleanup semantics.
 
-Run one process per data directory. More parallel jobs use MAX_CONCURRENT_JOBS;
+New shell jobs need capacity in both MAX_CONCURRENT_JOBS and
+MAX_JOBS_PER_WORKSPACE. For example, a global limit of 10 and a workspace limit
+of 4 allows several workspaces to run in parallel without one using all slots.
+Limits are independent; a workspace limit above the global limit is valid and
+adds no further restriction. Both must be positive integers. Neither setting
+reserves slots, guarantees scheduling fairness, or limits CPU/memory usage.
+
+Run one process per data directory. Set both limits for the intended parallelism;
 additional Uvicorn workers do not coordinate this server's in-memory state.

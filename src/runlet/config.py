@@ -14,6 +14,7 @@ class Settings:
     git_user_name: str = ""
     git_user_email: str = ""
     max_jobs: int = 2
+    max_jobs_per_workspace: int = 4
     max_workspaces: int = 32
     max_job_records: int = 256
     default_timeout: float = 300
@@ -52,6 +53,7 @@ class Settings:
             )
         for key in (
             "max_jobs",
+            "max_jobs_per_workspace",
             "max_workspaces",
             "max_job_records",
             "default_timeout",
@@ -107,6 +109,7 @@ class Settings:
             git_user_name=os.getenv("GIT_USER_NAME", ""),
             git_user_email=os.getenv("GIT_USER_EMAIL", ""),
             max_jobs=int(os.getenv("MAX_CONCURRENT_JOBS", "2")),
+            max_jobs_per_workspace=int(os.getenv("MAX_JOBS_PER_WORKSPACE", "4")),
             max_workspaces=int(os.getenv("MAX_WORKSPACES", "32")),
             max_job_records=int(os.getenv("MAX_JOB_RECORDS", "256")),
             default_timeout=float(os.getenv("DEFAULT_JOB_TIMEOUT", "300")),

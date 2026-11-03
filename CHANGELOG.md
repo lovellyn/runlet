@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.1 — 2026-11-03
+
+- Add MAX_JOBS_PER_WORKSPACE (default 4) alongside the existing global job limit.
+  New jobs return workspace_job_limit when their workspace is full; other
+  workspaces can still use remaining global capacity.
+- Report both limits through server_info and preserve request-id retries without
+  admitting duplicate jobs. Reuse the existing job counters and cleanup paths.
+- Add concurrent admission, lifecycle, MCP, and container regression coverage.
+
 ## 0.4.0 — 2026-11-03
 
 - Add file_upload tickets and raw HTTP PUT transfers with bounded-memory streaming,
