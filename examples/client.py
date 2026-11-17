@@ -2,6 +2,8 @@
 
 import asyncio
 import os
+from collections.abc import AsyncIterator
+from typing import Literal
 
 import httpx2 as httpx
 from mcp.client import Client
@@ -20,6 +22,42 @@ def data(result) -> dict:
     if result.is_error:
         raise RuntimeError(result.content)
     return result.structured_content
+
+
+async def follow_job(
+    client: Client,
+    result: dict,
+    *,
+    wait_for: Literal["completion", "output"] = "completion",
+    wait_seconds: float = 20,
+) -> AsyncIterator[dict]:
+    """Follow a job in host code; yield snapshots without accumulating logs in memory.
+
+    Consumers can spool output or update a UI without invoking the model per response.
+    Truncation flags remain visible. Errors propagate; this never replays a command or
+    cancels its job when the consumer stops waiting. Complete logs belong in a server file.
+    """
+    if not 0 < wait_seconds <= 20:
+        raise ValueError("Use 0 < wait_seconds <= 20 for a polling loop")
+    if wait_for not in {"completion", "output"}:
+        raise ValueError("wait_for must be completion or output")
+    while True:
+        yield result
+        if result["state"] != "running" and not result["has_more"]:
+            return
+        # Drain available pages immediately, including bytes retained after termination.
+        immediate = result["has_more"] or result["state"] != "running"
+        result = data(
+            await client.call_tool(
+                "job_status",
+                {
+                    "job_id": result["job_id"],
+                    "cursor": result["next_cursor"],
+                    "wait_seconds": 0 if immediate else wait_seconds,
+                    "wait_for": wait_for,
+                },
+            )
+        )
 
 
 async def main() -> None:
@@ -47,20 +85,11 @@ async def main() -> None:
                     )
                 )
                 job_id = result["job_id"]
-                while True:
+                async for snapshot in follow_job(client, result):
+                    result = snapshot
+                    if result["truncated"]:
+                        print("[Earlier output was truncated]")
                     print(result["output"], end="")
-                    if result["state"] != "running" and not result["has_more"]:
-                        break
-                    result = data(
-                        await client.call_tool(
-                            "job_status",
-                            {
-                                "job_id": job_id,
-                                "cursor": result["next_cursor"],
-                                "wait_seconds": 2,
-                            },
-                        )
-                    )
                 print(f"state={result['state']} exit_code={result['exit_code']}")
                 if result["state"] != "completed" or result["exit_code"] != 0:
                     raise RuntimeError("Sandbox command failed")

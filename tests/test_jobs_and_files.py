@@ -35,7 +35,7 @@ async def test_cancel_kills_descendants_and_timeout_releases_workspace(sandbox):
         "printf ready; (sleep 0.8; printf leaked > leaked.txt) & wait",
         wait_seconds=0,
     )
-    ready = await jobs.status(started["job_id"], wait_seconds=2)
+    ready = await jobs.status(started["job_id"], wait_seconds=2, wait_for="output")
     assert "ready" in ready["output"]
     cancelled = await jobs.cancel(started["job_id"])
     assert cancelled["state"] == "cancelled"

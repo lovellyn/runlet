@@ -51,9 +51,11 @@ async def test_pty_control_c_stops_foreground_command(sandbox):
     )
     job_id = result["job_id"]
     async with asyncio.timeout(3):
-        snapshot = await jobs.status(job_id, wait_seconds=2)
+        snapshot = await jobs.status(job_id, wait_seconds=2, wait_for="output")
         while "ready" not in snapshot["output"]:
-            snapshot = await jobs.status(job_id, cursor=snapshot["next_cursor"], wait_seconds=2)
+            snapshot = await jobs.status(
+                job_id, cursor=snapshot["next_cursor"], wait_seconds=2, wait_for="output"
+            )
     await jobs.write_stdin(job_id, "\x03")
     await asyncio.wait_for(jobs.get(job_id).task, 3)
     final = await jobs.status(job_id)

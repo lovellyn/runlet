@@ -19,6 +19,7 @@ another runtime account.
 - Scratch workspaces and optional GitHub HTTPS clones.
 - Parallel jobs with global and per-workspace limits; concurrent file operations.
 - Background jobs with incremental output, cancellation, timeouts, and reconnects.
+- Completion waits or bounded output batching, with a reusable harness wait loop.
 - PTYs with stdin, control keys, and explicit terminal resizing.
 - Per-file queued, atomic writes and exact text edits.
 - Native MCP image previews for PNG, JPEG, WebP, and GIF.
@@ -99,6 +100,7 @@ deletes its temporary workspace.
 ## Documentation
 
 - [MCP tools and concurrency](docs/tools.md)
+- [Job waits and harness integration](docs/waits.md)
 - [Configuration](docs/configuration.md)
 - [File uploads and harness integration](docs/uploads.md)
 - [File exports and downloads](docs/exports.md)

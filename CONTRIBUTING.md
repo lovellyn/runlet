@@ -28,7 +28,7 @@ python scripts/smoke_container.py --image runlet:test
 
 The container smoke test checks matching server/job identities, authentication,
 MCP tools, streamed uploads, exports/downloads, workspace writes, parallel jobs, the toolchain,
-global and per-workspace job limits, and persistence after a restart. The smoke
+global and per-workspace job limits, completion/output waits, and persistence after a restart. The smoke
 container uses limits of 3 globally and 2 per workspace to exercise both boundaries. It creates and removes its own container and volume.
 Optional --expected-uid and --expected-gid flags check deployment-specific IDs.
 The separate deploy/huggingface/smoke.sh check builds and exercises that wrapper.

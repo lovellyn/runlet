@@ -91,6 +91,6 @@ async def test_edit_runs_alongside_active_job(sandbox):
     await files.write(workspace_id, "settings.txt", "old")
     job = await jobs.start(workspace_id, "sleep 30", wait_seconds=0)
     await files.edit(workspace_id, "settings.txt", "old", "new")
-    assert (await jobs.status(job["job_id"]))["state"] == "running"
+    assert (await jobs.status(job["job_id"], wait_seconds=0))["state"] == "running"
     await jobs.cancel(job["job_id"])
     assert (await files.read(workspace_id, "settings.txt"))["content"] == "new"

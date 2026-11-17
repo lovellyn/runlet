@@ -8,7 +8,7 @@
 | workspace_get | Inspect a workspace and retained jobs |
 | workspace_delete | Explicitly remove an idle workspace, including unpushed files |
 | exec | Start a shell command; return its result or background job ID |
-| job_status | Incremental output, completion status, and optional long polling |
+| job_status | Wait for completion or batched output, then read from the byte cursor |
 | job_cancel | Stop a job and its descendants, including detached sessions |
 | job_write_stdin | Send UTF-8 input or pipe EOF to a running job, with optional input-offset checking |
 | job_resize | Resize a running PTY and notify its foreground process |
@@ -86,6 +86,7 @@ workspace_not_found instead of silently creating an empty directory.
   "command": "python analyze.py",
   "cwd": ".",
   "wait_seconds": 2,
+  "wait_for": "completion",
   "timeout": 300,
   "request_id": "optional-client-generated-id"
 }
@@ -95,10 +96,17 @@ Every exec starts a fresh Bash shell. Files and workspace-local packages persist
 while the workspace exists; shell variables and cwd changes do not carry over.
 Use cwd and env on each command as needed.
 
-Short commands return their output directly. Longer commands return a job_id.
-Call job_status with that job_id and the previous next_cursor to receive new
-output. wait_seconds on job_status waits up to 20 seconds for output or completion.
-Continue fetching while has_more is true, even after the command finishes.
+Both exec and job_status default to wait_for=completion. exec waits up to 2
+seconds by default; job_status waits up to 20. Log writes do not end a completion
+wait. Choose wait_for=output for a fixed 200 ms output batch, with immediate
+return on job completion or a full response. wait_seconds=0 reads immediately.
+
+Call job_status with the job_id and previous next_cursor for subsequent bytes.
+Drain has_more using wait_seconds=0, even after the command finishes. Reaching
+a wait deadline or cancelling the caller's wait leaves the job running.
+
+See [job waits and harness integration](waits.md) for the complete contract and
+the reusable follow_job iterator in examples/client.py.
 
 stdout and stderr are merged. Cursors are byte offsets. Buffers are bounded;
 truncated signals that earlier output has fallen out of the retained buffer.
@@ -155,8 +163,9 @@ on the application and its terminal mode.
 
 job_resize accepts job_id, rows, and cols (1–1000 each). PTYs start with
 TERM=xterm-256color unless overridden. Their output includes input echo, ANSI
-sequences, and CRLF. job_status remains the output-polling tool; its byte cursor
-works in both pipe and PTY mode.
+sequences, and CRLF. Use job_status with wait_for=output for prompts and live
+output; its byte cursor works in both pipe and PTY mode. Positive waits after
+job_write_stdin always use output mode.
 
 Job results report tty, terminal_size, stdin_closed, and input_offset.
 The input offset counts UTF-8 bytes accepted for delivery, not bytes consumed

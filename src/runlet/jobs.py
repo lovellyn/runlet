@@ -15,6 +15,9 @@ from .workspaces import Workspaces, finish_task, now
 
 MAX_STDIN_BYTES = 65_536
 STDIN_TIMEOUT = 5
+MAX_WAIT_SECONDS = 20
+OUTPUT_BATCH_SECONDS = 0.2
+WaitFor = Literal["completion", "output"]
 JobState = Literal["running", "completed", "failed", "cancelled", "timed_out"]
 
 
@@ -100,6 +103,7 @@ class Jobs:
         env: dict[str, str] | None = None,
         timeout: float | None = None,
         wait_seconds: float = 2,
+        wait_for: WaitFor = "completion",
         request_id: str | None = None,
         tty: bool = False,
         rows: int = 24,
@@ -112,8 +116,7 @@ class Jobs:
         timeout = self.settings.default_timeout if timeout is None else timeout
         if not 0 < timeout <= self.settings.max_timeout:
             raise SandboxError("invalid_timeout", f"Use 0 < timeout <= {self.settings.max_timeout}")
-        if not 0 <= wait_seconds <= 20:
-            raise SandboxError("invalid_wait", "Use 0 <= wait_seconds <= 20")
+        self._validate_wait(wait_seconds, wait_for)
         if request_id is not None and not 1 <= len(request_id) <= 128:
             raise SandboxError("invalid_request_id", "Use 1–128 characters")
         self._validate_size(rows, cols)
@@ -168,12 +171,7 @@ class Jobs:
                 self._requests[key] = job.job_id
             self._active += 1
             job.task = asyncio.create_task(self._run(job, child_env))
-        if wait_seconds and job.task is not None:
-            try:
-                await asyncio.wait_for(asyncio.shield(job.task), wait_seconds)
-            except TimeoutError:
-                pass
-        return self.snapshot(job, 0)
+        return await self._wait_snapshot(job, 0, wait_seconds, wait_for)
 
     def _evict_completed(self) -> None:
         while len(self.items) >= self.settings.max_job_records:
@@ -305,12 +303,17 @@ class Jobs:
                 job.output_start += extra
             job.changed.set()
 
-    def snapshot(self, job: Job, cursor: int) -> dict:
+    @staticmethod
+    def _validate_cursor(job: Job, cursor: int) -> int:
         end = job.output_start + len(job.output)
         if cursor < 0 or cursor > end:
             raise SandboxError(
                 "invalid_cursor", "Cursor must be between zero and next output offset"
             )
+        return end
+
+    def snapshot(self, job: Job, cursor: int) -> dict:
+        end = self._validate_cursor(job, cursor)
         start = max(cursor, job.output_start)
         stop = min(end, start + self.settings.response_bytes)
         output = bytes(job.output[start - job.output_start : stop - job.output_start])
@@ -337,22 +340,63 @@ class Jobs:
             "input_offset": job.input_offset,
         }
 
-    async def status(self, job_id: str, cursor: int = 0, wait_seconds: float = 0) -> dict:
-        if not 0 <= wait_seconds <= 20:
-            raise SandboxError("invalid_wait", "Use 0 <= wait_seconds <= 20")
-        job = self.get(job_id)
-        return await self._wait_snapshot(job, cursor, wait_seconds)
+    @staticmethod
+    def _validate_wait(wait_seconds: float, wait_for: str) -> None:
+        if not 0 <= wait_seconds <= MAX_WAIT_SECONDS:
+            raise SandboxError("invalid_wait", f"Use 0 <= wait_seconds <= {MAX_WAIT_SECONDS}")
+        if wait_for not in {"completion", "output"}:
+            raise SandboxError("invalid_wait", "wait_for must be completion or output")
 
-    async def _wait_snapshot(self, job: Job, cursor: int, wait_seconds: float) -> dict:
-        if wait_seconds:
-            try:
-                async with asyncio.timeout(wait_seconds):
-                    while job.state == "running" and job.output_start + len(job.output) <= cursor:
-                        job.changed.clear()
-                        await job.changed.wait()
-            except TimeoutError:
-                pass
+    async def status(
+        self,
+        job_id: str,
+        cursor: int = 0,
+        wait_seconds: float = MAX_WAIT_SECONDS,
+        wait_for: WaitFor = "completion",
+    ) -> dict:
+        self._validate_wait(wait_seconds, wait_for)
+        return await self._wait_snapshot(self.get(job_id), cursor, wait_seconds, wait_for)
+
+    async def _wait_snapshot(
+        self, job: Job, cursor: int, wait_seconds: float, wait_for: WaitFor
+    ) -> dict:
+        self._validate_cursor(job, cursor)
+        if wait_seconds and job.state == "running":
+            if wait_for == "completion":
+                # Log chunks do not wake completion waits. Shield the job from wait cancellation.
+                assert job.task is not None
+                try:
+                    await asyncio.wait_for(asyncio.shield(job.task), wait_seconds)
+                except TimeoutError:
+                    pass
+            else:
+                await self._wait_output(job, cursor, wait_seconds)
         return self.snapshot(job, cursor)
+
+    async def _wait_output(self, job: Job, cursor: int, wait_seconds: float) -> None:
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + wait_seconds
+        batch_deadline = None
+        while job.state == "running":
+            current = loop.time()
+            if current >= deadline:
+                return
+            end = job.output_start + len(job.output)
+            if end > cursor:
+                if end - max(cursor, job.output_start) >= self.settings.response_bytes:
+                    return
+                if batch_deadline is None:
+                    batch_deadline = min(deadline, current + OUTPUT_BATCH_SECONDS)
+                if current >= batch_deadline:
+                    return
+            # The first observed bytes fix the batch deadline; later writes never extend it.
+            wake_at = deadline if batch_deadline is None else batch_deadline
+            job.changed.clear()
+            try:
+                async with asyncio.timeout_at(wake_at):
+                    await job.changed.wait()
+            except TimeoutError:
+                return
 
     @staticmethod
     def _check_input(job: Job) -> None:
@@ -410,8 +454,7 @@ class Jobs:
         cursor: int = 0,
         wait_seconds: float = 0,
     ) -> dict:
-        if not 0 <= wait_seconds <= 20:
-            raise SandboxError("invalid_wait", "Use 0 <= wait_seconds <= 20")
+        self._validate_wait(wait_seconds, "output")
         try:
             data = chars.encode("utf-8")
         except UnicodeEncodeError as error:
@@ -421,7 +464,7 @@ class Jobs:
         if expected_input_offset is not None and expected_input_offset < 0:
             raise SandboxError("invalid_input", "expected_input_offset must be nonnegative")
         job = self.get(job_id)
-        self.snapshot(job, cursor)
+        self._validate_cursor(job, cursor)
         if job.tty and close_stdin:
             raise SandboxError(
                 "invalid_input", "A PTY cannot half-close; send Ctrl-D or cancel the job"
@@ -433,7 +476,10 @@ class Jobs:
                 raise SandboxError("stdin_conflict", "Input offset changed; inspect job_status")
             sending = asyncio.create_task(self._send_input(job, data, close_stdin))
             await finish_task(sending)
-        return {**await self._wait_snapshot(job, cursor, wait_seconds), "bytes_written": len(data)}
+        return {
+            **await self._wait_snapshot(job, cursor, wait_seconds, "output"),
+            "bytes_written": len(data),
+        }
 
     async def resize(self, job_id: str, rows: int, cols: int) -> dict:
         self._validate_size(rows, cols)

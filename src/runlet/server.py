@@ -29,7 +29,7 @@ from .images import (
     MAX_IMAGE_OUTPUT_BYTES,
     MAX_IMAGE_PIXELS,
 )
-from .jobs import MAX_STDIN_BYTES, Jobs
+from .jobs import MAX_STDIN_BYTES, MAX_WAIT_SECONDS, OUTPUT_BATCH_SECONDS, Jobs, WaitFor
 from .uploads import UPLOAD_PATH, Uploads
 from .workspaces import Workspaces
 
@@ -135,6 +135,8 @@ def create_app(settings: Settings | None = None):
             "to one snapshot until expiry or server restart. "
             "Use file_upload to create a single-file upload ticket, then have the harness "
             "stream raw bytes to its upload_url with HTTP PUT. File bytes stay outside MCP. "
+            "Waits default to completion; use wait_for=output for interactive log batches "
+            "and wait_seconds=0 for immediate snapshots. Read with next_cursor. "
             "Jobs continue across client disconnects, but not server restarts."
         ),
     )
@@ -189,6 +191,13 @@ def create_app(settings: Settings | None = None):
                 "max_file_bytes": settings.max_upload_bytes,
                 "max_uploads": settings.max_uploads,
                 "timeout_seconds": settings.upload_timeout,
+            },
+            "waiting": {
+                "max_wait_seconds": MAX_WAIT_SECONDS,
+                "output_batch_seconds": OUTPUT_BATCH_SECONDS,
+                "default_wait_for": "completion",
+                "exec_wait_seconds": 2,
+                "status_wait_seconds": MAX_WAIT_SECONDS,
             },
             "interactive": {
                 "pty": True,
@@ -261,6 +270,7 @@ def create_app(settings: Settings | None = None):
         env: dict[str, str] | None = None,
         timeout: float | None = None,
         wait_seconds: float = 2,
+        wait_for: WaitFor = "completion",
         request_id: str | None = None,
         tty: bool = False,
         rows: int = 24,
@@ -268,6 +278,10 @@ def create_app(settings: Settings | None = None):
     ) -> dict[str, Any]:
         """Run Bash in a workspace. Short commands return results; long commands return a job ID.
 
+        wait_for defaults to completion: log writes do not end the wait. Choose output
+        for interactive commands; bytes batch for up to 200 ms, with immediate return on
+        job exit or a full response. wait_seconds=0 returns immediately. A wait deadline
+        leaves the job running; timeout separately limits job execution.
         Each command starts a fresh shell with workspace-local HOME, TMPDIR and Python venv.
         cwd is relative. stdout/stderr are merged, buffered and bounded. Jobs survive a client
         disconnect; poll job_status with next_cursor for new output. All descendants are stopped
@@ -285,20 +299,33 @@ def create_app(settings: Settings | None = None):
         return await jobs.start(
             workspace_id,
             command,
-            cwd,
-            env,
-            timeout,
-            wait_seconds,
-            request_id,
-            tty,
-            rows,
-            cols,
+            cwd=cwd,
+            env=env,
+            timeout=timeout,
+            wait_seconds=wait_seconds,
+            wait_for=wait_for,
+            request_id=request_id,
+            tty=tty,
+            rows=rows,
+            cols=cols,
         )
 
     @mcp.tool(annotations=ToolAnnotations(read_only_hint=True))
-    async def job_status(job_id: str, cursor: int = 0, wait_seconds: float = 0) -> dict[str, Any]:
-        """Read incremental job output using its byte cursor; optionally long-poll for up to 20s."""
-        return await jobs.status(job_id, cursor, wait_seconds)
+    async def job_status(
+        job_id: str,
+        cursor: int = 0,
+        wait_seconds: float = MAX_WAIT_SECONDS,
+        wait_for: WaitFor = "completion",
+    ) -> dict[str, Any]:
+        """Wait for completion or batched output, then read from the byte cursor.
+
+        Completion mode ignores log writes and returns at job exit or the wait deadline.
+        Output mode batches bytes for at most 200 ms after the first observed output;
+        a full response or job exit returns immediately. wait_seconds=0 reads immediately.
+        Waits are bounded to 20 seconds and do not cancel the job. Keep next_cursor,
+        has_more, and truncated when collecting logs; drain has_more with immediate reads.
+        """
+        return await jobs.status(job_id, cursor, wait_seconds, wait_for)
 
     @mcp.tool(annotations=ToolAnnotations(destructive_hint=True))
     async def job_cancel(job_id: str) -> dict[str, Any]:
@@ -321,7 +348,8 @@ def create_app(settings: Settings | None = None):
         real EOF for pipe jobs; PTYs cannot half-close, so send Ctrl-D or cancel instead.
         Input calls queue per job. expected_input_offset rejects stale/replayed writes; input_offset
         counts bytes accepted for delivery, not consumption by the application. Inspect job_status
-        after an interrupted call before retrying. cursor and wait_seconds follow job_status.
+        after an interrupted call before retrying. cursor follows job_status; positive
+        wait_seconds always waits for batched output or job exit, up to 20 seconds.
         """
         return await jobs.write_stdin(
             job_id, chars, close_stdin, expected_input_offset, cursor, wait_seconds

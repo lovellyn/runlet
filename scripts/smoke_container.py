@@ -126,6 +126,37 @@ async def exercise(
                 )
                 assert partial.status_code == 206 and partial.content == b"ret"
 
+            assert info["waiting"]["default_wait_for"] == "completion"
+            assert info["waiting"]["max_wait_seconds"] == 20
+            prompt = await call(
+                "exec",
+                workspace_id=workspace_id,
+                command="printf ready; read -r value; printf finished",
+                wait_for="output",
+                wait_seconds=2,
+            )
+            assert prompt["state"] == "running" and prompt["output"] == "ready", prompt
+            try:
+                pending = await call(
+                    "job_status",
+                    job_id=prompt["job_id"],
+                    cursor=prompt["next_cursor"],
+                    wait_for="completion",
+                    wait_seconds=0.05,
+                )
+                assert pending["state"] == "running" and pending["output"] == ""
+                await call("job_write_stdin", job_id=prompt["job_id"], chars="go\n")
+                finished = await call(
+                    "job_status",
+                    job_id=prompt["job_id"],
+                    cursor=pending["next_cursor"],
+                    wait_for="completion",
+                    wait_seconds=2,
+                )
+                assert finished["state"] == "completed" and finished["output"] == "finished"
+            finally:
+                await call("job_cancel", job_id=prompt["job_id"])
+
             identity_check = ""
             if identity is not None:
                 uid, gid = identity
@@ -272,7 +303,7 @@ def main() -> None:
         assert second_boot != first_boot and same_id == workspace_id
         print(
             "Container smoke passed: auth, MCP, streamed uploads, downloads, identity, toolchain, "
-            "parallel jobs, workspace/global limits, persistence"
+            "parallel jobs, waits, workspace/global limits, persistence"
         )
     except BaseException:
         if container_created:

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.0 — 2026-11-17
+
+- Add explicit completion/output wait modes to exec and job_status. Both default
+  to completion; job_status now waits up to 20 seconds by default. Immediate
+  snapshots use wait_seconds=0.
+- Batch output in a fixed 200 ms window that cannot outlive the request deadline.
+  Full responses and terminal jobs return immediately. Positive stdin waits use
+  output mode, including prompts without a newline.
+- Preserve independent job lifetime, cursor pagination, truncation reporting, and
+  cancellation behavior. Advertise wait capabilities in server_info.
+- Add the reusable follow_job harness iterator, detailed waiting documentation,
+  and regression/container coverage.
+
 ## 0.4.2 — 2026-11-03
 
 - Default to 10 concurrent jobs globally and 4 per workspace, with matching

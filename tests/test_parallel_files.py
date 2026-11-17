@@ -15,5 +15,5 @@ async def test_parallel_edits_preserve_all_changes_while_job_runs(sandbox):
     await asyncio.gather(*(files.write(workspace_id, f"file-{i}.txt", str(i)) for i in range(12)))
     results = await asyncio.gather(*(files.read(workspace_id, f"file-{i}.txt") for i in range(12)))
     assert [result["content"] for result in results] == [str(i) for i in range(12)]
-    assert (await jobs.status(job["job_id"]))["state"] == "running"
+    assert (await jobs.status(job["job_id"], wait_seconds=0))["state"] == "running"
     await jobs.cancel(job["job_id"])

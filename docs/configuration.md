@@ -53,6 +53,11 @@ Image preview limits are fixed: 10 MiB input, 25 megapixels, 2 MiB output, up to
 dimension is 1600 pixels. PTY dimensions range from 1 to 1000 rows/columns.
 Each stdin write accepts at most 64 KiB of UTF-8.
 
+Wait calls are bounded to 20 seconds. exec and job_status default to completion
+mode with wait_seconds defaults of 2 and 20 respectively. Explicit output mode
+batches for at most 200 ms after observing unread bytes. These fixed limits and
+defaults are reported by server_info.waiting; see [job waits](waits.md).
+
 PUBLIC_BASE_URL must have no credentials, query, fragment, or whitespace. It is
 configured explicitly rather than derived from request headers. See
 [file exports](exports.md) and [uploads](uploads.md) for routing, capability access,
